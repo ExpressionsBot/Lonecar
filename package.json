@@ -12,6 +12,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
+    "@pinecone-database/pinecone": "^3.0.3",
     "@supabase/supabase-js": "^2.44.4",
     "emoji-picker-react": "^4.11.1",
     "formidable": "^3.5.1",

@@ -7,7 +7,7 @@ import ChatHeader from '@/components/ChatHeader';
 import ChatMessages from '@/components/ChatMessages';
 import MessageInput from '@/components/MessageInput';
 import useChatStore from '@/store/chatStore';
-import useAuth from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
