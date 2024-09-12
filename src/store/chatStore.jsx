@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import supabase from '@/utils/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
 import { getPineconeIndex } from '@/utils/pineconeClient';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
 const useChatStore = create((set, get) => ({
   currentChat: null,
@@ -9,6 +14,7 @@ const useChatStore = create((set, get) => ({
   messageInput: '',
   userProgress: {},
   context: [],
+  userId: null,
   
   setCurrentChat: (chatId) => set({ currentChat: chatId }),
   
@@ -40,7 +46,7 @@ const useChatStore = create((set, get) => ({
   },
   
   sendMessage: async (message) => {
-    const { currentChat, userProgress, context } = get();
+    const { currentChat, userProgress, context, userId } = get();
     try {
       console.log('Sending message:', message);
       
@@ -65,6 +71,7 @@ const useChatStore = create((set, get) => ({
             model: 'gpt-4o-mini',
             context: context,
             userProgress: userProgress,
+            userId: userId,
           }),
         });
 
@@ -142,15 +149,20 @@ const useChatStore = create((set, get) => ({
   
   createChat: async (chatName) => {
     try {
+      console.log('Creating chat:', chatName);
       const { data: existingChats, error: fetchError } = await supabase
         .from('chat_sessions')
         .select('id')
         .eq('session_name', chatName)
         .limit(1);
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching existing chats:', fetchError);
+        throw fetchError;
+      }
 
       if (existingChats && existingChats.length > 0) {
+        console.log('Chat already exists:', existingChats);
         throw new Error('A chat with this name already exists');
       }
 
@@ -160,16 +172,15 @@ const useChatStore = create((set, get) => ({
         .select()
         .single();
 
-      if (error) throw error;
-
-      if (data) {
-        set((state) => ({ chats: [data, ...state.chats] }));
-        return data;
-      } else {
-        throw new Error('No data returned from chat creation');
+      if (error) {
+        console.error('Error creating chat:', error);
+        throw error;
       }
+      console.log('Chat created successfully:', data);
+      set((state) => ({ chats: [data, ...state.chats] }));
+      return data;
     } catch (error) {
-      console.error('Error creating chat:', error);
+      console.error('Error in createChat:', error);
       throw error;
     }
   },
@@ -229,31 +240,7 @@ const useChatStore = create((set, get) => ({
   setMessageInput: (input) => set({ messageInput: input }),
   setUserProgress: (progress) => set({ userProgress: progress }),
   setContext: (newContext) => set({ context: newContext }),
-  
-  querySimilarMessages: async (queryMessage) => {
-    try {
-      const response = await fetch('/api/query-messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query_message: queryMessage,
-          userId: get().currentUser.id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to query similar messages');
-      }
-
-      const data = await response.json();
-      return data.messages;
-    } catch (error) {
-      console.error('Error querying similar messages:', error);
-      throw error;
-    }
-  },
+  setUserId: (id) => set({ userId: id }),
 }));
 
 export default useChatStore;

@@ -7,7 +7,7 @@ import ChatHeader from '@/components/ChatHeader';
 import ChatMessages from '@/components/ChatMessages';
 import MessageInput from '@/components/MessageInput';
 import useChatStore from '@/store/chatStore';
-import { useAuth } from '@/hooks/useAuth';
+import useAuth from '@/hooks/useAuth';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -23,7 +23,8 @@ export default function ChatPage() {
     userProgress,
     setUserProgress,
     context,
-    setContext
+    setContext,
+    setUserId
   } = useChatStore();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -41,9 +42,15 @@ export default function ChatPage() {
         router.push('/login');
       } else {
         setIsLoading(false);
+        if (session.user && session.user.id) {
+          setUserId(session.user.id);
+          console.log('User ID set:', session.user.id);
+        } else {
+          console.error('Session user or user ID is undefined');
+        }
       }
     }
-  }, [session, loading, router]);
+  }, [session, loading, router, setUserId]);
 
   useEffect(() => {
     console.log('Current messages in ChatPage:', messages);

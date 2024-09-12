@@ -1,22 +1,7 @@
 import OpenAI from 'openai';
 import { formatResponse, handleApiError } from '@/utils/apiUtils';
-import { initializePinecone, getPineconeIndex } from '@/utils/pineconeClient';
-import supabase from '@/utils/supabaseClient';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-async function generateEmbedding(text) {
-  try {
-    const response = await openai.embeddings.create({
-      model: 'text-embedding-ada-002',
-      input: text,
-    });
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw error;
-  }
-}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -25,21 +10,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Initialize Pinecone
-    await initializePinecone();
+    const { message, chatId, model, context, userProgress, userId } = req.body;
 
-    const { message, chatId, model, context, userProgress } = req.body;
-
-    // Generate embedding for the message
-    const embedding = await generateEmbedding(message);
-
-    // Store the embedding in Pinecone
-    const pineconeIndex = getPineconeIndex();
-    await pineconeIndex.upsert([{
-      id: chatId,
-      values: embedding,
-      metadata: { userId: req.user.id }
-    }]);
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
 
     const systemPrompt = `You are LonestarAI, a premier sales coach and tutor for new employees specializing in door-to-door sales. Your purpose is to ensure they adhere to the latest company guidelines and sales-oriented directives while providing an exceptional user experience.
 
@@ -113,14 +88,10 @@ Use the following context to inform your response: ${context.join(' ')}`;
       ],
     });
 
-    // Store the message in Supabase
-    const { data, error } = await supabase
-      .from('conversations')
-      .insert({ session_id: chatId, sender: 'user', content: message });
-
-    if (error) throw error;
-
-    res.status(200).json(response.choices[0].message.content);
+    res.status(200).json({
+      content: response.choices[0].message.content,
+      userId: userId
+    });
   } catch (error) {
     handleApiError(error, res);
   }
