@@ -3,6 +3,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "typeRoots": ["./node_modules/@types"]
-  }
+    "typeRoots": ["./node_modules/@types", "./types"],
+    "resolveJsonModule": true
+  },
+  "include": ["./types/**/*.d.ts", "src/**/*"]
 }

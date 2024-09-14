@@ -41,8 +41,6 @@ const useChatStore = create((set, get) => ({
   sendMessage: async (message) => {
     const { currentChat, userProgress, context } = get();
     try {
-      console.log('Sending message:', message);
-      
       // Insert message into Supabase
       const { data, error } = await supabase
         .from('conversations')
@@ -51,45 +49,40 @@ const useChatStore = create((set, get) => ({
 
       if (error) throw error;
 
-      // If the message is from the user, get AI response
-      if (message.sender === 'user') {
-        const response = await fetch('/api/openai', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: message.content,
-            chatId: currentChat,
-            model: 'gpt-4o-mini',
-            context: context,
-            userProgress: userProgress,
-          }),
-        });
+      // Call the server-side API route to handle OpenAI interaction
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: message.content,
+          chatId: currentChat,
+          context: context,
+          userProgress: userProgress,
+        }),
+      });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const result = await response.json();
-        console.log('AI response received:', result);
-
-        // Create and insert AI message
-        const aiMessage = {
-          content: result,
-          sender: 'assistant',
-          session_id: currentChat,
-          created_at: new Date().toISOString()
-        };
-
-        await supabase
-          .from('conversations')
-          .insert(aiMessage);
-
-        // No need to update local state here, as it's handled by the subscription
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      return data[0];
+      const result = await response.json();
+      console.log('AI response received:', result);
+
+      // Create and insert AI message into Supabase
+      const aiMessage = {
+        content: result.message,
+        sender: 'assistant',
+        session_id: currentChat,
+        created_at: new Date().toISOString(),
+      };
+
+      await supabase.from('conversations').insert(aiMessage);
+
+      // Update local state if necessary
+      // ...
+
     } catch (error) {
       console.error('Error sending message:', error);
       throw error;

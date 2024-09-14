@@ -10,9 +10,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Create a Supabase client using the URL and Anon Key
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  persistSession: true,
-  autoRefreshToken: true,
-});
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default supabase; // Export the Supabase client as the default export
