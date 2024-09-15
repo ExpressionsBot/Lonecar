@@ -3,15 +3,14 @@ dotenv.config({ path: '.env.local' }); // Ensure this points to your .env.local 
 
 import { initializePinecone } from '../src/utils/pineconeClient.js';
 
-(async () => {
+async function testPinecone() {
   try {
-    // Optional: Log the variables to verify they are loaded
-    console.log('PINECONE_API_KEY:', process.env.PINECONE_API_KEY);
-    console.log('PINECONE_ENVIRONMENT:', process.env.PINECONE_ENVIRONMENT);
-
     const pinecone = await initializePinecone();
-    console.log('Pinecone initialized successfully:', pinecone);
+    console.log('Pinecone initialized:', pinecone);
+    // You can add additional tests or operations here
   } catch (error) {
     console.error('Error initializing Pinecone:', error);
   }
-})();
+}
+
+testPinecone();

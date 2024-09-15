@@ -1,10 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    },
-    "typeRoots": ["./node_modules/@types", "./types"],
-    "resolveJsonModule": true
+    }
   },
-  "include": ["./types/**/*.d.ts", "src/**/*"]
+  "include": ["next-env.d.ts", "**/*"]
 }

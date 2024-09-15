@@ -1,5 +1,6 @@
 "use client";
 
+import { subscribeToMessages } from '@/utils/realtimeService';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/sidebar/SidebarContainer';
@@ -18,22 +19,29 @@ export default function ChatPage() {
     messages, 
     fetchMessages, 
     currentChat, 
-    setCurrentChat,
-    sendMessage,
-    userProgress,
-    setUserProgress,
-    context,
-    setContext
+    setCurrentChat, 
+    sendMessage, 
+    userProgress, 
+    setUserProgress, 
+    context, 
+    setContext,
+    addMessage // Destructure addMessage from the store
   } = useChatStore();
-
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isAiResponding, setIsAiResponding] = useState(false);
 
   useEffect(() => {
     if (currentChat) {
       fetchMessages(currentChat);
+      const unsubscribe = subscribeToMessages(currentChat, (newMessage) => {
+        addMessage(newMessage); // Use addMessage from the store
+      });
+      return () => {
+        if (unsubscribe) unsubscribe();
+      };
     }
-  }, [currentChat, fetchMessages]);
+  }, [currentChat, fetchMessages, addMessage]);
 
   useEffect(() => {
     if (!loading) {
@@ -51,14 +59,12 @@ export default function ChatPage() {
 
   const handleSendMessage = useCallback(async (content) => {
     if (!currentChat) return;
-
     const userMessage = {
       content,
       sender: 'user',
       session_id: currentChat,
       created_at: new Date().toISOString()
     };
-
     try {
       setIsAiResponding(true);
       await sendMessage(userMessage);
@@ -71,34 +77,21 @@ export default function ChatPage() {
     }
   }, [currentChat, sendMessage]);
 
-  // Add functions to update user progress and context
-  const updateUserProgress = useCallback((newProgress) => {
-    setUserProgress({ ...userProgress, ...newProgress });
-  }, [userProgress, setUserProgress]);
-
-  const updateContext = useCallback((newContext) => {
-    setContext([...context, newContext]);
-  }, [context, setContext]);
-
-  const onChatDelete = useCallback((deletedChatId) => {
-    useChatStore.getState().clearMessages();
-    useChatStore.getState().fetchChats();
-  }, []);
-
   return (
     <div className="flex h-screen overflow-hidden bg-navy">
-      <Sidebar 
-        setCurrentChat={setCurrentChat} 
-        currentChat={currentChat} 
-        onChatDelete={onChatDelete}
+      <Sidebar
+        setCurrentChat={setCurrentChat}
+        currentChat={currentChat}
       />
       <div className="flex flex-col flex-grow overflow-hidden">
         <ChatHeader currentChat={currentChat} />
         <div className="flex-grow overflow-y-auto bg-navy">
-          <ChatMessages 
-            messages={messages} 
-            isLoading={isLoading} 
-            isAiResponding={isAiResponding} 
+          <ChatMessages
+            currentChat={currentChat} // Pass currentChat as prop
+            messages={messages}
+            addMessage={addMessage} // Pass addMessage as prop
+            isLoading={isLoading}
+            isAiResponding={isAiResponding}
           />
         </div>
         <MessageInput onSendMessage={handleSendMessage} isAiResponding={isAiResponding} />
@@ -106,3 +99,4 @@ export default function ChatPage() {
     </div>
   );
 }
+

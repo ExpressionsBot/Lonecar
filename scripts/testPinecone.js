@@ -1,13 +1,13 @@
 require('dotenv').config();
-const { initializePinecone } = require('../src/utils/pineconeClient.cjs');
+const { initializePinecone } = require('../src/utils/pineconeClient.mjs');
 
-async function testPinecone() {
+(async () => {
   try {
     const pinecone = await initializePinecone();
-    console.log('Pinecone initialized successfully:', pinecone);
+    const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+    const info = await index.describeIndex();
+    console.log('Pinecone index info:', info);
   } catch (error) {
-    console.error('Error initializing Pinecone:', error);
+    console.error('Error testing Pinecone:', error);
   }
-}
-
-testPinecone();
+})();

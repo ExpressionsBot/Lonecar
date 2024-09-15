@@ -1,21 +1,24 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { Pinecone } from '@pinecone-database/pinecone';
+import { PineconeClient } from '@pinecone-database/pinecone';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const pinecone = new Pinecone({
+const pinecone = new PineconeClient();
+
+await pinecone.init({
   apiKey: process.env.PINECONE_API_KEY,
+  environment: process.env.PINECONE_ENVIRONMENT,
 });
 
 export async function POST(req) {
   try {
-    const { message, chatId, model, userProgress } = await req.json();
+    const { message, chatId, userProgress, context } = await req.json();
 
     const embedding = await getEmbedding(message);
-    const context = await queryPineconeForContext(embedding);
+    const pineconeContext = await queryPineconeForContext(embedding);
 
     const systemPrompt = `You are LonestarAI, a premier sales coach and tutor for new employees specializing in door-to-door sales. Your purpose is to ensure they adhere to the latest company guidelines and sales-oriented directives while providing an exceptional user experience.
 
@@ -56,7 +59,7 @@ Follow these principles:
 22. Ethical Review
 23. Goal Alignment
 
-Use the following context to inform your response: ${context}`;
+Use the following context to inform your response: ${pineconeContext}`;
 
     const response = await openai.chat.completions.create({
       model: model || 'gpt-4',
@@ -72,7 +75,7 @@ Use the following context to inform your response: ${context}`;
     });
   } catch (error) {
     console.error('Error in OpenAI API:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    return new Response(JSON.stringify({ error: error.message || 'Internal Server Error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

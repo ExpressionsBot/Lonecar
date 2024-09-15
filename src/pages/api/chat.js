@@ -1,11 +1,11 @@
-import initializePinecone from '../../utils/pineconeClient';
+import initializePinecone from '../../../src/utils/pineconeClient';
 import OpenAI from 'openai';
-import supabase from '../../utils/supabaseClient';
+import supabase from '../../../src/utils/supabaseClient';
 import util from 'util';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const { initializePinecone } = require('../../utils/pineconeClient.cjs');
+const { initializePinecone } = require('../../utils/pineconeClient.mjs/index.js');
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
