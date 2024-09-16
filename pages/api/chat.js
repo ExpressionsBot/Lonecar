@@ -6,16 +6,20 @@ const MESSAGES_TABLE = 'messages';
 
 async function verifyMessagesTable(supabase) {
   try {
+    console.log('Verifying messages table...');
     const { data, error } = await supabase
       .from('messages')
       .select('id')
       .limit(1);
     
-    if (error) throw error;
-    log('Messages table verified');
+    if (error) {
+      console.error('Error verifying messages table:', error);
+      throw error;
+    }
+    console.log('Messages table verified successfully');
     return true;
   } catch (error) {
-    console.error('Error verifying messages table:', error);
+    console.error('Error in verifyMessagesTable:', error);
     return false;
   }
 }
