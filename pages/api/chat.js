@@ -4,26 +4,6 @@ import supabase from '@/utils/supabaseClient.js';
 
 const MESSAGES_TABLE = 'messages';
 
-async function verifyMessagesTable(supabase) {
-  try {
-    console.log('Verifying messages table...');
-    const { data, error } = await supabase
-      .from('messages')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('Error verifying messages table:', error);
-      throw error;
-    }
-    console.log('Messages table verified successfully');
-    return true;
-  } catch (error) {
-    console.error('Error in verifyMessagesTable:', error);
-    return false;
-  }
-}
-
 function log(message) {
   console.log(`[${new Date().toISOString()}] ${message}`);
 }
@@ -48,47 +28,6 @@ async function createEmbedding(openai, message) {
     input: message,
   });
   return embeddingResponse.data[0].embedding;
-}
-
-async function testSupabaseConnection(supabase) {
-  try {
-    console.log('Testing Supabase connection...');
-    const { data, error } = await supabase
-      .from(MESSAGES_TABLE)
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('Supabase connection test failed:', JSON.stringify(error, null, 2));
-      throw error;
-    }
-    console.log('Supabase connection test successful');
-    console.log('Data returned:', JSON.stringify(data, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error in testSupabaseConnection:', error);
-    return false;
-  }
-}
-
-async function verifyMessagesTable(supabase) {
-  try {
-    console.log('Verifying messages table...');
-    const { data, error } = await supabase
-      .from('messages')
-      .select('id')
-      .limit(1);
-    
-    if (error) {
-      console.error('Error verifying messages table:', error);
-      throw error;
-    }
-    console.log('Messages table verified successfully');
-    return true;
-  } catch (error) {
-    console.error('Error in verifyMessagesTable:', error);
-    return false;
-  }
 }
 
 async function storeMessageInSupabase(supabase, userId, message, chatId) {
@@ -148,26 +87,8 @@ export default async function handler(req, res) {
       checkRequiredEnvVars();
       log('Environment variables checked');
 
-      if (!supabase) {
-        throw new Error('Supabase client is not initialized');
-      }
+      if (!supabase) throw new Error('Supabase client is not initialized');
       log('Supabase client verified');
-
-      // Test Supabase connection
-      log('Testing Supabase connection');
-      const isConnected = await testSupabaseConnection(supabase);
-      if (!isConnected) {
-        throw new Error('Failed to connect to Supabase');
-      }
-      log('Supabase connection test passed');
-
-      // Verify messages table
-      log('Verifying messages table');
-      const tableExists = await verifyMessagesTable(supabase);
-      if (!tableExists) {
-        throw new Error('Messages table does not exist or is not accessible');
-      }
-      log('Messages table verified');
 
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       log('OpenAI client initialized');
@@ -236,7 +157,7 @@ export default async function handler(req, res) {
       console.error('Error in API route:', error);
       log(`Error in API route: ${error.message}`);
       if (error.message.includes('Supabase')) {
-        console.error('Supabase error details:', error);
+        console.error('Supabase error details:', JSON.stringify(error));
       }
       res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
