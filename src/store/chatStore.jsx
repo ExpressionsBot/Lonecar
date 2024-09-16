@@ -42,16 +42,15 @@ const useChatStore = create((set, get) => ({
     const { currentChat, userProgress, context } = get();
     try {
       // Insert message into Supabase
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('conversations')
-        .insert(message)
-        .select();
+        .insert(message);
 
       if (error) throw error;
 
-      // Call the server-side API route to handle OpenAI interaction
+      // Ensure the method is POST
       const response = await fetch('/api/chat', {
-        method: 'POST',
+        method: 'POST', // Make sure this is 'POST'
         headers: {
           'Content-Type': 'application/json',
         },
@@ -70,18 +69,7 @@ const useChatStore = create((set, get) => ({
       const result = await response.json();
       console.log('AI response received:', result);
 
-      // Create and insert AI message into Supabase
-      const aiMessage = {
-        content: result.message,
-        sender: 'assistant',
-        session_id: currentChat,
-        created_at: new Date().toISOString(),
-      };
-
-      await supabase.from('conversations').insert(aiMessage);
-
-      // Update local state if necessary
-      // ...
+      // Handle AI response as needed
 
     } catch (error) {
       console.error('Error sending message:', error);

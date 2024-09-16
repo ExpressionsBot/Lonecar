@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
@@ -14,15 +17,16 @@
     "@fortawesome/fontawesome-svg-core": "^6.6.0",
     "@fortawesome/free-solid-svg-icons": "^6.6.0",
     "@fortawesome/react-fontawesome": "^0.2.2",
-    "@pinecone-database/pinecone": "^0.0.5",
+    "@pinecone-database/pinecone": "^3.0.3",
     "@supabase/supabase-js": "^2.44.4",
+    "axios": "^1.7.7",
     "bufferutil": "^4.0.8",
     "emoji-picker-react": "^4.11.1",
     "formidable": "^3.5.1",
     "framer-motion": "^11.3.19",
     "lodash": "^4.17.21",
     "next": "^13.5.2",
-    "openai": "^4.53.2",
+    "openai": "^4.61.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-loader-spinner": "^6.1.6",

@@ -1,60 +1,127 @@
-import { initializePinecone } from '@/utils/pineconeClient.js';
+import { initializePinecone, getPineconeIndex } from '@/utils/pineconeClient.js';
 import OpenAI from 'openai';
 import supabase from '@/utils/supabaseClient.js';
-import util from 'util';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const MESSAGES_TABLE = 'messages';
+
+function log(message) {
+  console.log(`[${new Date().toISOString()}] ${message}`);
+}
+
+function checkRequiredEnvVars() {
+  const requiredVars = [
+    'OPENAI_API_KEY',
+    'PINECONE_API_KEY',
+    'PINECONE_INDEX_NAME',
+    'NEXT_PUBLIC_SUPABASE_URL',
+    'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+  ];
+  const missingVars = requiredVars.filter((varName) => !process.env[varName]);
+  if (missingVars.length > 0) {
+    throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+  }
+}
+
+async function createEmbedding(openai, message) {
+  const embeddingResponse = await openai.embeddings.create({
+    model: "text-embedding-ada-002",
+    input: message,
+  });
+  return embeddingResponse.data[0].embedding;
+}
+
+async function storeMessageInSupabase(supabase, userId, message, chatId) {
+  const { data, error } = await supabase
+    .from(MESSAGES_TABLE)
+    .insert({ sender: userId, content: message, session_id: chatId })
+    .select();
+  
+  if (error) throw new Error(`Supabase insert error: ${error.message}`);
+  if (!data || data.length === 0) throw new Error('No data returned from Supabase insert operation');
+  
+  return data[0];
+}
+
+async function storeEmbeddingInPinecone(index, messageId, embedding, message, userId) {
+  await index.upsert([
+    {
+      id: messageId,
+      values: embedding,
+      metadata: { text: message, userId },
+    },
+  ]);
+}
+
+async function generateAIResponse(openai, message) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4",
+    messages: [{ role: "user", content: message }],
+  });
+  return completion.choices[0].message.content;
+}
+
+async function storeAIResponseInSupabase(supabase, aiResponse, chatId) {
+  const { error } = await supabase
+    .from(MESSAGES_TABLE)
+    .insert({ sender: 'assistant', content: aiResponse, session_id: chatId });
+  
+  if (error) {
+    console.error('Error storing AI response in Supabase:', error);
+  }
+}
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { message, userId } = req.body;
-
+  if (req.method === "POST") {
     try {
-      // Initialize Pinecone
-      const pinecone = await initializePinecone();
-      const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+      log('Starting chat handler');
+      checkRequiredEnvVars();
+      log('Environment variables checked');
 
-      // Create embedding for the message
-      const embeddingResponse = await openai.embeddings.create({
-        model: "text-embedding-ada-002",
-        input: message,
-      });
-      const embedding = embeddingResponse.data[0].embedding;
+      if (!supabase) throw new Error('Supabase client is not initialized');
+      log('Supabase client verified');
 
-      // Store message in Supabase
-      const { data, error } = await supabase
-        .from('messages')
-        .insert({ user_id: userId, content: message })
-        .select();
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+      log('OpenAI client initialized');
 
-      if (error) throw error;
+      log('Initializing Pinecone');
+      await initializePinecone();
+      log('Pinecone initialized');
 
-      // Store embedding in Pinecone
-      await index.upsert([
-        {
-          id: data[0].id,
-          values: embedding,
-          metadata: { text: message, userId },
-        },
-      ]);
+      const index = await getPineconeIndex();
+      log(`Pinecone index '${process.env.PINECONE_INDEX_NAME}' accessed`);
 
-      // Generate AI response
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [{ role: "user", content: message }],
-      });
+      const { message, userId, chatId } = req.body;
+      if (!message || typeof message !== 'string' || !userId || !chatId) {
+        log('Invalid request data structure');
+        return res.status(400).json({ error: 'Invalid request data structure' });
+      }
 
-      const aiResponse = completion.choices[0].message.content;
+      log('Creating embedding');
+      const embedding = await createEmbedding(openai, message);
+      log('Embedding created');
 
-      // Store AI response in Supabase
-      await supabase
-        .from('messages')
-        .insert({ user_id: 'AI', content: aiResponse });
+      log('Storing message in Supabase');
+      const messageData = await storeMessageInSupabase(supabase, userId, message, chatId);
+      log('Message stored in Supabase');
 
+      log('Storing embedding in Pinecone');
+      await storeEmbeddingInPinecone(index, messageData.id, embedding, message, userId);
+      log('Embedding stored in Pinecone');
+
+      log('Generating AI response');
+      const aiResponse = await generateAIResponse(openai, message);
+      log('AI response generated');
+
+      log('Storing AI response in Supabase');
+      await storeAIResponseInSupabase(supabase, aiResponse, chatId);
+      log('AI response stored in Supabase');
+
+      log('Sending response');
       res.status(200).json({ message: aiResponse });
     } catch (error) {
-      console.error('Error in API route:', util.inspect(error, { depth: null }));
-      res.status(500).json({ error: 'Error generating response' });
+      console.error('Error in API route:', error);
+      log(`Error in API route: ${error.message}`);
+      res.status(500).json({ error: 'Internal Server Error', details: error.message });
     }
   } else {
     res.setHeader('Allow', ['POST']);
