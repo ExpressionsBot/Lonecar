@@ -8,15 +8,21 @@ import SidebarFooter from './SidebarFooter';
 import SidebarNewChatModal from './SidebarNewChatModal';
 import { handleDeleteChat, handleLogout } from '@/utils/sidebarHandlers';
 
-export default function Sidebar({ setCurrentChat, currentChat, onChatDelete, isMessageLoading }) {
+const SidebarContainer = () => {
   const { chats, fetchChats } = useChatStore((state) => ({ 
     chats: state.chats,
     fetchChats: state.fetchChats
   }));
+  const setCurrentChat = useChatStore((state) => state.setCurrentChat);
+  const currentChat = useChatStore((state) => state.currentChat);
+  const createChat = useChatStore((state) => state.createChat);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newChatName, setNewChatName] = useState('');
+
+  const isMessageLoading = useChatStore((state) => state.isMessageLoading);
 
   useEffect(() => {
     const loadChats = async () => {
@@ -36,28 +42,17 @@ export default function Sidebar({ setCurrentChat, currentChat, onChatDelete, isM
   const handleOpenNewChatModal = () => setIsModalOpen(true);
   const handleCloseNewChatModal = () => setIsModalOpen(false);
 
-  const handleCreateChat = async () => {
-    if (!newChatName.trim()) {
-      toast.error('Chat name cannot be empty');
-      return;
-    }
+  const handleCreateChat = async (newChatName) => {
+    if (!newChatName || !newChatName.trim()) return;
+
     try {
-      const createChat = useChatStore.getState().createChat;
-      const newChat = await createChat(newChatName);
-      setCurrentChat(newChat.id);
-      await fetchChats(); // Refetch the chats to ensure the new chat is in the list
-      handleCloseNewChatModal();
-      setNewChatName('');
-      toast.success('New chat created successfully');
+      const chatData = await createChat(newChatName.trim());
+      setCurrentChat(chatData.id);
+      setIsModalOpen(false);
+      // Optionally reset newChatName if you manage it here
     } catch (error) {
       console.error('Error creating chat:', error);
-      if (error.message === 'A chat with this name already exists') {
-        toast.error('A chat with this name already exists. Please choose a different name.');
-      } else if (error.message === 'Network Error') {
-        toast.error('Unable to create chat due to network issues. Please try again later.');
-      } else {
-        toast.error('An unexpected error occurred. Please try again.');
-      }
+      // Handle error, e.g., show a toast notification
     }
   };
 
@@ -73,7 +68,7 @@ export default function Sidebar({ setCurrentChat, currentChat, onChatDelete, isM
           chats={chats}
           currentChat={currentChat}
           setCurrentChat={setCurrentChat}
-          handleDeleteChat={(chatId) => handleDeleteChat(chatId, fetchChats, setCurrentChat, currentChat, onChatDelete)}
+          handleDeleteChat={(chatId) => handleDeleteChat(chatId, fetchChats, setCurrentChat, currentChat)}
           isMessageLoading={isMessageLoading}
         />
       </div>
@@ -92,3 +87,5 @@ export default function Sidebar({ setCurrentChat, currentChat, onChatDelete, isM
     </div>
   );
 }
+
+export default SidebarContainer;

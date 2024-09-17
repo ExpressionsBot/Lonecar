@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import AuthModal from '@/components/AuthModal';
-import useAuth from '@/hooks/useAuth';
 import supabase from '@/utils/supabaseClient';
 
 export default function SignupPage() {
@@ -16,28 +15,45 @@ export default function SignupPage() {
   const [isModalVisible, setIsModalVisible] = useState(true);
   // Router instance from Next.js
   const router = useRouter();
-  const { session } = useAuth();
 
   // Function to handle signup
   const handleSignup = async (email, password) => {
-    // Set loading state to true
     setIsLoading(true);
     try {
       // Attempt to sign up with email and password
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data: signUpData, error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
-        // Set feedback message if there's an error
         setFeedback(error.message);
       } else {
-        // Redirect to chat page on successful signup
-        router.push('/chat');
+        // Wait for the session to be established
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          setFeedback('Could not retrieve user session.');
+          return;
+        }
+
+        const user = session.user;
+
+        // Insert the user into the 'users' table
+        const { data: newUser, error: insertUserError } = await supabase
+          .from('users')
+          .insert({ id: user.id, email: user.email })
+          .select()
+          .single();
+
+        if (insertUserError) {
+          console.error('Error inserting user:', insertUserError);
+          setFeedback('Error inserting user into database.');
+        } else {
+          // Redirect to chat page on successful signup
+          router.push('/chat');
+        }
       }
     } catch (error) {
-      // Set feedback message if there's an unexpected error
       setFeedback('An unexpected error occurred. Please try again.');
     } finally {
-      // Set loading state to false
       setIsLoading(false);
     }
   };
@@ -48,11 +64,14 @@ export default function SignupPage() {
     router.push('/');
   };
 
+  // Redirect if already logged in
   useEffect(() => {
-    if (session) {
-      router.push('/chat');
-    }
-  }, [session, router]);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/chat');
+      }
+    });
+  }, [router]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-navy text-light-gray p-4" role="main" aria-label="Sign up page">

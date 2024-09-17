@@ -8,9 +8,9 @@ const useChatStore = create((set, get) => ({
   messageInput: '',
   userProgress: {},
   context: [],
-  
+
   setCurrentChat: (chatId) => set({ currentChat: chatId }),
-  
+
   fetchMessages: async (chatId) => {
     try {
       const { data, error } = await supabase
@@ -24,7 +24,7 @@ const useChatStore = create((set, get) => ({
       console.error('Error fetching messages:', error);
     }
   },
-  
+
   fetchChats: async () => {
     try {
       const { data, error } = await supabase
@@ -37,23 +37,29 @@ const useChatStore = create((set, get) => ({
       console.error('Error fetching chats:', error);
     }
   },
-  
+
   sendMessage: async (message) => {
     const { currentChat, userProgress, context } = get();
     try {
-      // Insert message into Supabase
-      const { error } = await supabase
+      // Insert user message into Supabase
+      const { data: newMessage, error: insertError } = await supabase
         .from('conversations')
-        .insert(message);
+        .insert({
+          content: message.content,
+          session_id: currentChat,
+          sender: 'user',
+        })
+        .select()
+        .single();
 
-      if (error) throw error;
+      if (insertError) {
+        throw insertError;
+      }
 
-      // Ensure the method is POST
+      // Send message to API for processing
       const response = await fetch('/api/chat', {
-        method: 'POST', // Make sure this is 'POST'
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: message.content,
           chatId: currentChat,
@@ -63,115 +69,65 @@ const useChatStore = create((set, get) => ({
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error processing message');
       }
 
       const result = await response.json();
-      console.log('AI response received:', result);
 
-      // Handle AI response as needed
+      // Insert AI response into Supabase
+      await supabase.from('conversations').insert({
+        content: result.message,
+        session_id: currentChat,
+        sender: 'assistant',
+      });
 
+      // Fetch updated messages
+      await get().fetchMessages(currentChat);
     } catch (error) {
       console.error('Error sending message:', error);
-      throw error;
     }
   },
-  
-  addMessage: (message) => {
-    set((state) => ({
-      messages: [...state.messages, message]
-    }));
-  },
-  
-  clearMessages: () => set({ messages: [] }),
-  
-  set: (fn) => set(fn),
-  
-  addChat: (newChat) => set((state) => {
-    if (!state.chats.some(chat => chat.id === newChat.id)) {
-      return { chats: [newChat, ...state.chats] };
-    }
-    return state;
-  }),
-  
-  createChat: async (chatName) => {
+
+  createChat: async (sessionName) => {
     try {
-      const { data: existingChats, error: fetchError } = await supabase
-        .from('chat_sessions')
-        .select('id')
-        .eq('session_name', chatName)
-        .limit(1);
+      // Verify authentication and get the user
+      const { data: { user }, error: sessionError } = await supabase.auth.getUser();
 
-      if (fetchError) throw fetchError;
-
-      if (existingChats && existingChats.length > 0) {
-        throw new Error('A chat with this name already exists');
+      if (sessionError) throw sessionError;
+      if (!user) {
+        console.error('User is not authenticated');
+        return;
       }
 
-      const { data, error } = await supabase
+      // Insert into chat_sessions
+      const { data: chatData, error: chatError } = await supabase
         .from('chat_sessions')
-        .insert({ session_name: chatName })
+        .insert({
+          user_id: user.id,
+          session_name: sessionName,
+        })
         .select()
         .single();
 
-      if (error) throw error;
-      set((state) => ({ chats: [data, ...state.chats] }));
-      return data;
+      if (chatError) {
+        console.error('Chat creation error:', chatError);
+        throw chatError;
+      }
+
+      // Update chats in the store
+      const { chats } = get();
+      set({ chats: [chatData, ...chats] });
+
+      // Optionally set the new chat as current
+      set({ currentChat: chatData.id });
+
+      return chatData;
     } catch (error) {
       console.error('Error creating chat:', error);
       throw error;
     }
   },
-  
-  deleteMessage: async (messageId) => {
-    const { messages, currentChat } = get();
-    try {
-      const { error } = await supabase
-        .from('conversations')
-        .delete()
-        .match({ id: messageId, session_id: currentChat });
-
-      if (error) throw error;
-
-      set({ messages: messages.filter(msg => msg.id !== messageId) });
-    } catch (error) {
-      console.error('Error deleting message:', error);
-    }
-  },
-  
-  copyMessage: (message) => {
-    navigator.clipboard.writeText(message.content);
-  },
-  
-  subscribeToMessages: (chatId) => {
-    const channel = supabase
-      .channel(`public:conversations:session_id=eq.${chatId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'conversations' },
-        (payload) => {
-          set((state) => ({
-            messages: [...state.messages, payload.new]
-          }));
-          console.log('New message received:', payload.new);
-        }
-      )
-      .subscribe();
-  
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  },
-  
-  clearPendingResponse: (chatId) => {
-    set((state) => ({
-      messages: state.messages.filter(msg => msg.session_id !== chatId || msg.status !== 'pending')
-    }));
-  },
-  
-  setMessageInput: (input) => set({ messageInput: input }),
-  setUserProgress: (progress) => set({ userProgress: progress }),
-  setContext: (newContext) => set({ context: newContext }),
 }));
 
 export default useChatStore;

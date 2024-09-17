@@ -3,31 +3,38 @@ import supabase from '@/utils/supabaseClient';
 import { toast } from 'react-toastify';
 import useChatStore from '@/store/chatStore';
 
-export const handleCreateChat = async (newChatName, chats, setCurrentChat, setIsModalOpen, setNewChatName) => {
+export const handleCreateChat = async (
+  newChatName,
+  chats,
+  setCurrentChat,
+  setIsModalOpen,
+  setNewChatName
+) => {
   if (!newChatName || !newChatName.trim()) return;
 
   try {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session || !session.user) {
-      console.error('Session error:', sessionError || 'No valid session found');
-      toast.error('No active user session. Please log in again.');
+    // Verify authentication and get the user
+    const { data: { user }, error: sessionError } = await supabase.auth.getUser();
+
+    if (sessionError) throw sessionError;
+    if (!user) {
+      console.error('User is not authenticated');
+      toast.error('Please log in to create a chat session.');
       return;
     }
 
-    // Check if a chat with the same name already exists
-    const existingChat = chats.find(chat => chat.session_name === newChatName.trim());
-    if (existingChat) {
-      toast.warning('A chat with this name already exists.');
-      return;
-    }
+    // Prepare insert data with the correct user_id
+    const insertData = {
+      user_id: user.id,
+      session_name: newChatName.trim(),
+    };
 
-    setIsModalOpen(false); // Close the modal immediately to prevent double submission
-
-    const { data: chatData, error: chatError } = await supabase.from('chat_sessions').insert({
-      user_id: session.user.id,
-      session_name: newChatName.trim()
-    }).select().single();
+    // Insert into chat_sessions
+    const { data: chatData, error: chatError } = await supabase
+      .from('chat_sessions')
+      .insert(insertData)
+      .select()
+      .single();
 
     if (chatError) {
       console.error('Chat creation error:', chatError);
@@ -37,6 +44,7 @@ export const handleCreateChat = async (newChatName, chats, setCurrentChat, setIs
       setCurrentChat(chatData.id);
       toast.success('New chat session added successfully');
       setNewChatName('');
+      setIsModalOpen(false);
     } else {
       console.error('No chat data returned');
       toast.error('Error creating chat: No data returned');

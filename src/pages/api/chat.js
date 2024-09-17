@@ -2,12 +2,26 @@ import initializePinecone from '../../../src/utils/pineconeClient';
 import OpenAI from 'openai';
 import supabase from '../../../src/utils/supabaseClient';
 import util from 'util';
+import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const { initializePinecone } = require('../../utils/pineconeClient.mjs/index.js');
 
 export default async function handler(req, res) {
+  const supabase = createServerSupabaseClient({ req, res });
+  const {
+    data: { session },
+    error: authError,
+  } = await supabase.auth.getSession();
+
+  if (authError || !session) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  const user = session.user;
+  // Proceed with the authenticated user's ID
+
   if (req.method === 'POST') {
     const { message, userId } = req.body;
 

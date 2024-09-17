@@ -1,19 +1,16 @@
 // SidebarNewChatModal.js
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
-const SidebarNewChatModal = ({ isOpen, onClose, newChatName, setNewChatName, handleCreateChat }) => {
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      handleCreateChat(newChatName);
-    }
-  };
+const SidebarNewChatModal = ({ isOpen, onClose, handleCreateChat }) => {
+  const [newChatName, setNewChatName] = useState('');
 
   const handleCreate = () => {
     handleCreateChat(newChatName);
+    setNewChatName('');
+    onClose();
   };
 
   return (
@@ -38,7 +35,7 @@ const SidebarNewChatModal = ({ isOpen, onClose, newChatName, setNewChatName, han
             >
               <FontAwesomeIcon icon={faTimes} className="h-5 w-5" />
             </button>
-            <div onKeyDown={handleKeyDown}>
+            <div>
               <h2 className="text-3xl font-bold mb-6 text-light-gray">Create New Chat</h2>
               <input
                 type="text"
