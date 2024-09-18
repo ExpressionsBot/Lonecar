@@ -16,9 +16,17 @@ export async function createEmbedding(text) {
       model: 'text-embedding-ada-002',
       input: text,
     });
-    return response.data[0].embedding;
+    
+    if (!response.data || !response.data[0] || !response.data[0].embedding) {
+      console.error('Invalid response from OpenAI:', response);
+      throw new Error('Failed to generate embedding');
+    }
+    
+    const embedding = response.data[0].embedding;
+    console.log('Generated embedding:', embedding);
+    return embedding;
   } catch (error) {
     console.error('Error creating embedding:', error);
-    return null;
+    throw error;
   }
 }
