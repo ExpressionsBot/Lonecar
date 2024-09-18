@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { initializePinecone } from '@/utils/pineconeClient';
 import { createEmbedding } from '@/utils/openaiHelpers';
 import { formatResponse } from '@/utils/apiHelpers';
@@ -16,7 +15,10 @@ export async function POST(request) {
     console.log('Request body:', { message, userId, chatId, context, userProgress });
 
     if (!message || !userId || !chatId) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Initialize Pinecone
@@ -27,7 +29,10 @@ export async function POST(request) {
     // Create embedding
     const embedding = await createEmbedding(message);
     if (!embedding) {
-      return NextResponse.json({ error: 'Failed to create embedding' }, { status: 500 });
+      return new Response(JSON.stringify({ error: 'Failed to create embedding' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
     console.log('Embedding created');
 
@@ -41,7 +46,10 @@ export async function POST(request) {
       console.log('Embedding upserted');
     } catch (error) {
       console.error('Error upserting embedding:', error);
-      return NextResponse.json({ error: 'Failed to upsert embedding', details: error.message }, { status: 500 });
+      return new Response(JSON.stringify({ error: 'Failed to upsert embedding', details: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
     // Query Pinecone for relevant context
@@ -75,9 +83,16 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       ],
     });
     console.log('OpenAI response generated');
-    return NextResponse.json(formatResponse(aiResponse));
+    
+    return new Response(JSON.stringify(formatResponse(aiResponse)), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
   } catch (error) {
     console.error('Detailed error in API route:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 }
