@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request) {
   console.log('Received request in /api/chat');
@@ -9,29 +10,49 @@ export async function POST(request) {
     const { message, chatId, userProgress, context } = await request.json();
     console.log('Request body:', { message, chatId, userProgress, context });
 
-    // Initialize Supabase client with cookies
-    const supabase = createRouteHandlerClient({ cookies });
+    // Extract Access Token from Authorization Header
+    const authHeader = request.headers.get('authorization') || '';
+    const accessToken = authHeader.replace('Bearer ', '').trim();
+
+    if (!accessToken) {
+      console.error('No access token provided');
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Initialize Supabase client with the access token
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        global: {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      }
+    );
 
     // Authenticate the user
     const {
-      data: { session },
-      error: authError,
-    } = await supabase.auth.getSession();
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
 
-    if (authError || !session || !session.user) {
-      console.error('Authentication failed:', authError);
-      return new Response(
-        JSON.stringify({ error: 'Authentication failed' }),
-        {
-          status: 401,
-          headers: { 'Content-Type': 'application/json' },
-        }
-      );
+    if (error || !user) {
+      console.error('Authentication failed:', error);
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Your application logic here
+    // Now you can proceed with your application logic
     // For example, insert message into Supabase, process with OpenAI, etc.
 
+    // Example response
     const response = {
       message: `Received: ${message}`,
       chatId,

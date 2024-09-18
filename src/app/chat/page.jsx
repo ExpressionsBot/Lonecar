@@ -101,7 +101,14 @@ export default function ChatPage() {
             isAiResponding={isAiResponding}
           />
         </div>
-        <MessageInput onSendMessage={handleSendMessage} isAiResponding={isAiResponding} />
+        <MessageInput
+          onSendMessage={handleSendMessage}
+          isAiResponding={isAiResponding}
+          currentChat={currentChat}
+          sendMessage={sendMessage}
+          context={context}
+          userProgress={userProgress}
+        />
       </div>
     </div>
   );

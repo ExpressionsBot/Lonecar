@@ -10,9 +10,15 @@ import { faSmile, faEllipsisV } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
 
 // Define the MessageInput component
-export default function MessageInput({ onSendMessage, isAiResponding }) {
-  const messageInput = useChatStore(state => state.messageInput);
-  const setMessageInput = useChatStore(state => state.setMessageInput);
+export default function MessageInput({
+  onSendMessage,
+  isAiResponding,
+}) {
+  const messageInput = useChatStore((state) => state.messageInput);
+  const setMessageInput = useChatStore((state) => state.setMessageInput);
+  
+  // Destructure variables from the store
+  const { currentChat, sendMessage, context, userProgress } = useChatStore();
 
   const [showPicker, setShowPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -31,10 +37,12 @@ export default function MessageInput({ onSendMessage, isAiResponding }) {
   // Function to handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (typeof messageInput === 'string' && messageInput.trim()) {
-      debouncedSendMessage(messageInput);
-      setMessageInput('');
+    if (!currentChat) {
+      console.error('No current chat selected');
+      return;
     }
+    sendMessage(messageInput, currentChat, context, userProgress);
+    setMessageInput('');
   };
 
   // Function to handle key down events on the textarea

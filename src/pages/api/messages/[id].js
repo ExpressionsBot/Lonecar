@@ -13,13 +13,18 @@ export default async function handler(req, res) {
       }
 
       // Delete message from Supabase
-      const { error } = await supabase.from('messages').delete().eq('id', id);
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
       if (error) throw error;
 
       // Delete embedding from Pinecone
       await pineconeIndex.delete1({ ids: [id.toString()] });
 
-      res.status(200).json({ message: 'Message and embedding deleted successfully' });
+      res
+        .status(200)
+        .json({ message: 'Message and embedding deleted successfully' });
     } catch (error) {
       console.error('Error deleting message:', error);
       res.status(500).json({ error: 'Internal Server Error' });
