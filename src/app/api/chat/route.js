@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { initializePinecone } from '@/utils/pineconeClient';
 import { createEmbedding } from '@/utils/openaiHelpers';
 import { formatResponse } from '@/utils/apiHelpers';
-import OpenAI from 'openai'; // Updated import
+import OpenAI from 'openai';
 
 // Initialize OpenAI client outside the handler
 const openai = new OpenAI({
@@ -32,16 +32,17 @@ export async function POST(request) {
     console.log('Embedding created');
 
     // Upsert embedding into Pinecone
-    await index.upsert({
-      vectors: [
-        {
-          id: `${chatId}-${Date.now()}`, // Unique ID
-          values: embedding,
-          metadata: { text: message, userId },
-        },
-      ],
-    });
-    console.log('Embedding upserted');
+    try {
+      await index.upsert([{
+        id: `${chatId}-${Date.now()}`,
+        values: embedding,
+        metadata: { text: message, userId },
+      }]);
+      console.log('Embedding upserted');
+    } catch (error) {
+      console.error('Error upserting embedding:', error);
+      return NextResponse.json({ error: 'Failed to upsert embedding', details: error.message }, { status: 500 });
+    }
 
     // Query Pinecone for relevant context
     const queryResponse = await index.query({
@@ -61,8 +62,6 @@ export async function POST(request) {
 User's current progress:
 ${JSON.stringify(userProgress, null, 2)}
 
-Use this progress information to tailor your responses and provide appropriate guidance.
-
 Respond in a conversational and natural tone, avoiding any unnecessary formatting like ## headings and the overuse of bullet points.
 
 Use the following context to inform your response: ${context.join(' ')} ${relevantContext}`;
@@ -76,14 +75,9 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       ],
     });
     console.log('OpenAI response generated');
-
     return NextResponse.json(formatResponse(aiResponse));
   } catch (error) {
     console.error('Detailed error in API route:', error);
-    return NextResponse.json({ 
-      error: 'Internal Server Error', 
-      message: error.message,
-      stack: error.stack
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
