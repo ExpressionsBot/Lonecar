@@ -10,12 +10,20 @@ const PineconeClient = pinecone.default;
 const openai = new OpenAI(process.env.OPENAI_API_KEY);
 
 async function createEmbedding(text) {
-    const response = await openai.embeddings.create({
-        model: 'text-embedding-ada-002',
-        input: text,
-    });
-    const embedding = response.data[0].embedding;
-    return embedding;
+    try {
+        const response = await openai.embeddings.create({
+            model: 'text-embedding-ada-002',
+            input: text,
+        });
+        const embedding = response.data[0].embedding;
+        if (!embedding) {
+            throw new Error('Embedding generation failed.');
+        }
+        return embedding;
+    } catch (error) {
+        console.error('Error generating embedding:', error);
+        throw error;
+    }
 }
 
 export { createEmbedding };

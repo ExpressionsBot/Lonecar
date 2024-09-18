@@ -14,11 +14,21 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Initialize Pinecone client
+let index;
+(async () => {
+  const pinecone = await initializePinecone();
+  index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+})();
+
 export async function POST(request) {
-  console.log('Received request in /api/chat');
+  // Ensure index is ready
+  if (!index) {
+    // Handle error or wait
+  }
+
   try {
     const { message, userId, chatId, context, userProgress } = await request.json();
-    console.log('Request body:', { message, userId, chatId, context, userProgress });
 
     if (!message || !userId || !chatId) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -27,44 +37,23 @@ export async function POST(request) {
       });
     }
 
-    // Initialize Pinecone
-    const pinecone = await initializePinecone();
-    const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
-    console.log('Pinecone initialized');
+    // Generate embedding for querying
+    const queryEmbedding = await createEmbedding(message);
 
-    // Create embedding
-    const embedding = await createEmbedding(message);
-    if (!embedding) {
-      return new Response(JSON.stringify({ error: 'Failed to create embedding' }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    console.log('Embedding created');
-
-    // Upsert embedding into Pinecone
-    try {
-      await index.upsert([{
-        id: `${chatId}-${Date.now()}`,
-        values: embedding,
-        metadata: { text: message, userId },
-      }]);
-      console.log('Embedding upserted');
-    } catch (error) {
-      console.error('Error upserting embedding:', error);
-      return new Response(JSON.stringify({ error: 'Failed to upsert embedding', details: error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    // Verify embedding
+    if (!Array.isArray(queryEmbedding)) {
+      console.error('Invalid embedding format');
+      // Handle error appropriately
     }
 
     // Query Pinecone for relevant context
     const queryResponse = await index.query({
-      vector: embedding,
+      vector: queryEmbedding,
       topK: 5,
       includeMetadata: true,
     });
-    console.log('Pinecone query completed');
+
+    console.log('Pinecone query response:', queryResponse);
 
     const relevantContext = queryResponse.matches
       .map((match) => match.metadata.text)
@@ -88,7 +77,6 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
         { role: 'user', content: message },
       ],
     });
-    console.log('OpenAI response generated');
 
     // Save AI response to Supabase
     const { data, error } = await supabase
@@ -107,8 +95,6 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
         headers: { 'Content-Type': 'application/json' },
       });
     }
-
-    console.log('AI response saved to Supabase');
 
     return new Response(JSON.stringify(formatResponse(aiResponse)), {
       status: 200,
