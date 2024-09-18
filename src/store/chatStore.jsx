@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { createClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
@@ -10,6 +11,24 @@ const useChatStore = create((set, get) => ({
   messageInput: '',
   userProgress: {},
   context: [],
+  currentUserId: null, // Add this line
+
+  initializeUser: async () => {
+    // Fetch the current user from Supabase
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Error getting user:', error);
+      return;
+    }
+
+    if (user) {
+      set({ currentUserId: user.id });
+    }
+  },
 
   setCurrentChat: (chatId) => set({ currentChat: chatId }),
 
@@ -44,45 +63,64 @@ const useChatStore = create((set, get) => ({
     }
   },
 
-  sendMessage: async (message, chatId, context, userProgress) => {
+  sendMessage: async (messageText, chatId, context, userProgress) => {
+    const userId = get().currentUserId;
+
+    if (!userId) {
+      console.error('User ID is not set');
+      return;
+    }
+
+    const userMessage = {
+      id: uuidv4(),
+      content: messageText,
+      sender: 'user',
+      created_at: new Date().toISOString(),
+    };
+
+    // Update local state to include the new message
+    set((state) => ({
+      messages: [...state.messages, userMessage],
+    }));
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session) {
-        throw new Error('User is not authenticated');
-      }
-
+      // Send the message to the backend API
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ message, userId: session.user.id, chatId, context, userProgress }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: messageText,
+          chatId,
+          userId, // Use the userId from the state
+          context,
+          userProgress,
+        }),
       });
 
+      // Handle errors in response
       if (!response.ok) {
-        const errorData = await response.text();
-        console.error('Error response:', errorData);
-        let errorMessage;
-        try {
-          const jsonError = JSON.parse(errorData);
-          errorMessage = jsonError.message || jsonError.error || 'Unknown error';
-        } catch {
-          errorMessage = errorData;
-        }
-        throw new Error(errorMessage);
+        const errorData = await response.json();
+        console.error('Error from API:', errorData);
+        // Optionally, handle the error (e.g., show a notification)
+        return;
       }
 
-      const data = await response.json();
-      set((state) => ({
-        messages: [...state.messages, { role: 'assistant', content: data.response }],
-      }));
-      return data;
+      // Handle the AI response
+      const aiResponse = await response.json();
+      if (aiResponse) {
+        const assistantMessage = {
+          id: uuidv4(),
+          content: aiResponse.content,
+          sender: 'assistant',
+          created_at: new Date().toISOString(),
+        };
+        set((state) => ({
+          messages: [...state.messages, assistantMessage],
+        }));
+      }
     } catch (error) {
-      console.error('Detailed error in sendMessage:', error);
-      set({ error: error.message });
-      throw error;
+      console.error('Error sending message:', error);
+      // Handle error (e.g., display a notification to the user)
     }
   },
 

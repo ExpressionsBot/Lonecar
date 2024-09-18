@@ -84,6 +84,12 @@ export default function ChatPage() {
     }
   }, [currentChat, sendMessage]);
 
+  const { initializeUser } = useChatStore();
+
+  useEffect(() => {
+    initializeUser();
+  }, [initializeUser]);
+
   return (
     <div className="flex h-screen overflow-hidden bg-navy">
       <Sidebar

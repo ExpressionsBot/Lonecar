@@ -86,6 +86,7 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
         content: aiResponse.choices[0].message.content,
         session_id: chatId,
         sender: 'assistant',
+        // Do not include 'id' here; let Supabase generate it
       });
 
     if (error) {
