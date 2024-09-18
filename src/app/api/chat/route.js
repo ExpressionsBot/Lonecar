@@ -1,83 +1,89 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { createClient } from '@supabase/supabase-js';
+import { initializePinecone } from '@/utils/pineconeClient';
+import { createEmbedding } from '@/utils/openaiHelpers';
+import { formatResponse } from '@/utils/apiHelpers';
+import OpenAI from 'openai'; // Updated import
+
+// Initialize OpenAI client outside the handler
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function POST(request) {
   console.log('Received request in /api/chat');
-
   try {
-    const { message, chatId, userProgress, context } = await request.json();
-    console.log('Request body:', { message, chatId, userProgress, context });
+    const { message, userId, chatId, context, userProgress } = await request.json();
+    console.log('Request body:', { message, userId, chatId, context, userProgress });
 
-    // Extract Access Token from Authorization Header
-    const authHeader = request.headers.get('authorization') || '';
-    const accessToken = authHeader.replace('Bearer ', '').trim();
-
-    if (!accessToken) {
-      console.error('No access token provided');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (!message || !userId || !chatId) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Initialize Supabase client with the access token
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        global: {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+    // Initialize Pinecone
+    const pinecone = await initializePinecone();
+    const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+    console.log('Pinecone initialized');
+
+    // Create embedding
+    const embedding = await createEmbedding(message);
+    if (!embedding) {
+      return NextResponse.json({ error: 'Failed to create embedding' }, { status: 500 });
+    }
+    console.log('Embedding created');
+
+    // Upsert embedding into Pinecone
+    await index.upsert({
+      vectors: [
+        {
+          id: `${chatId}-${Date.now()}`, // Unique ID
+          values: embedding,
+          metadata: { text: message, userId },
         },
-      }
-    );
-
-    // Authenticate the user
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
-
-    if (error || !user) {
-      console.error('Authentication failed:', error);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Now you can proceed with your application logic
-    // For example, insert message into Supabase, process with OpenAI, etc.
-
-    // Example response
-    const response = {
-      message: `Received: ${message}`,
-      chatId,
-      userProgress,
-      context,
-    };
-
-    console.log('Sending response:', response);
-    return new Response(JSON.stringify(response), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      ],
     });
+    console.log('Embedding upserted');
+
+    // Query Pinecone for relevant context
+    const queryResponse = await index.query({
+      vector: embedding,
+      topK: 5,
+      includeMetadata: true,
+    });
+    console.log('Pinecone query completed');
+
+    const relevantContext = queryResponse.matches
+      .map((match) => match.metadata.text)
+      .join(' ');
+
+    // Prepare system prompt
+    const systemPrompt = `You are LonestarAI, a premier sales coach and tutor for new employees specializing in door-to-door sales. Your purpose is to ensure they adhere to the latest company guidelines and sales-oriented directives while providing an exceptional user experience.
+
+User's current progress:
+${JSON.stringify(userProgress, null, 2)}
+
+Use this progress information to tailor your responses and provide appropriate guidance.
+
+Respond in a conversational and natural tone, avoiding any unnecessary formatting like ## headings and the overuse of bullet points.
+
+Use the following context to inform your response: ${context.join(' ')} ${relevantContext}`;
+
+    // Generate OpenAI response
+    const aiResponse = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: message },
+      ],
+    });
+    console.log('OpenAI response generated');
+
+    return NextResponse.json(formatResponse(aiResponse));
   } catch (error) {
-    console.error('Error in /api/chat:', error);
-
-    // Include error stack in development mode
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    const errorResponse = {
-      error: 'Internal Server Error',
-      ...(isDevelopment && { message: error.message, stack: error.stack }),
-    };
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('Detailed error in API route:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error', 
+      message: error.message,
+      stack: error.stack
+    }, { status: 500 });
   }
 }

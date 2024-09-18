@@ -47,6 +47,7 @@ const useChatStore = create((set, get) => ({
   sendMessage: async (message, chatId, context, userProgress) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+
       if (!session) {
         throw new Error('User is not authenticated');
       }
@@ -55,14 +56,22 @@ const useChatStore = create((set, get) => ({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ message, chatId, context, userProgress }),
+        body: JSON.stringify({ message, userId: session.user.id, chatId, context, userProgress }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to send message');
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        let errorMessage;
+        try {
+          const jsonError = JSON.parse(errorData);
+          errorMessage = jsonError.message || jsonError.error || 'Unknown error';
+        } catch {
+          errorMessage = errorData;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -71,7 +80,7 @@ const useChatStore = create((set, get) => ({
       }));
       return data;
     } catch (error) {
-      console.error('Error in sendMessage:', error);
+      console.error('Detailed error in sendMessage:', error);
       set({ error: error.message });
       throw error;
     }

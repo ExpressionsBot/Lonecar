@@ -73,7 +73,7 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <MessageGroup messages={group} />
+            <MessageGroup messages={group} deleteMessage={deleteMessage} />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -98,23 +98,27 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   );
 }
 
-function MessageGroup({ messages }) {
+function MessageGroup({ messages, deleteMessage }) {
   const sender = messages[0].sender;
   return (
     <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className="flex flex-col">
         {messages.map((message, index) => (
-          <MessageBubble key={index} message={message} isGrouped={index !== 0} />
+          <MessageBubble
+            key={index}
+            message={message}
+            isGrouped={index !== 0}
+            deleteMessage={deleteMessage}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function MessageBubble({ message, isGrouped }) {
+function MessageBubble({ message, isGrouped, deleteMessage }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
-  const deleteMessage = useChatStore(state => state.deleteMessage);
   const copyMessage = useChatStore(state => state.copyMessage);
 
   const processedContent = useMemo(() => {

@@ -1,18 +1,17 @@
-import { PineconeClient } from '@pinecone-database/pinecone';
+import { Pinecone } from '@pinecone-database/pinecone';
 
-let pinecone;
+let pineconeClient;
 
-export default async function initializePinecone() {
-  if (pinecone) {
-    return pinecone;
+/**
+ * Initializes and returns the Pinecone client.
+ * Ensures that only one instance exists (singleton pattern).
+ * @returns {Pinecone} - The initialized Pinecone client.
+ */
+export async function initializePinecone() {
+  if (!pineconeClient) {
+    pineconeClient = new Pinecone({
+      apiKey: process.env.PINECONE_API_KEY,
+    });
   }
-
-  pinecone = new PineconeClient();
-
-  await pinecone.init({
-    apiKey: process.env.PINECONE_API_KEY,
-    environment: process.env.PINECONE_ENVIRONMENT,
-  });
-
-  return pinecone;
+  return pineconeClient;
 }

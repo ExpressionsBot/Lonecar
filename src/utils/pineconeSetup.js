@@ -38,6 +38,13 @@ async function setupIndex(pinecone, indexName) {
       suppressConflicts: true,
       // Wait until the index is ready before returning success
       waitUntilReady: true,
+      // Add the 'spec' parameter
+      spec: {
+        pods: {
+          pod_type: 'p1.x1',
+          pod_count: 1,
+        },
+      },
     });
 
     console.log(`Pinecone index ${indexName} is ready`);
