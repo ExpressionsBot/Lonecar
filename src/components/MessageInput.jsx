@@ -11,10 +11,8 @@ import useChatStore from '@/store/chatStore';
 
 // Define the MessageInput component
 export default function MessageInput({ onSendMessage, isAiResponding }) {
-  const { messageInput, setMessageInput } = useChatStore(state => ({
-    messageInput: state.messageInput,
-    setMessageInput: state.setMessageInput
-  }));
+  const messageInput = useChatStore(state => state.messageInput);
+  const setMessageInput = useChatStore(state => state.setMessageInput);
 
   const [showPicker, setShowPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);

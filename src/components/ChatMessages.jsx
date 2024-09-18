@@ -13,14 +13,14 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
     deleteMessage: state.deleteMessage,
     fetchMessages: state.fetchMessages,
     currentChat: state.currentChat,
-    subscribeToMessages: state.subscribeToMessages,
-    clearPendingResponse: state.clearPendingResponse
+    subscribeToMessages: state.subscribeToMessages || (() => {}),
+    clearPendingResponse: state.clearPendingResponse || (() => {}),
   }));
 
   useEffect(() => {
     if (currentChat) {
       fetchMessages(currentChat);
-      const unsubscribe = subscribeToMessages(currentChat);
+      const unsubscribe = subscribeToMessages ? subscribeToMessages(currentChat) : null;
       return () => {
         if (unsubscribe) unsubscribe();
         if (clearPendingResponse) clearPendingResponse(currentChat);

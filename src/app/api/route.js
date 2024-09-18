@@ -1,17 +1,12 @@
+import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
 import OpenAI from 'openai';
 import initializePinecone from '@/utils/pineconeClient';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
-  }
-
-  // Initialize Supabase client
-  const supabase = createServerSupabaseClient({ req, res });
+export async function POST(req) {
+  const supabase = createServerSupabaseClient({ req });
   const {
     data: { session },
     error: authError,
@@ -19,22 +14,21 @@ export default async function handler(req, res) {
 
   if (authError || !session) {
     console.error('Authentication error:', authError);
-    return res.status(401).json({ error: 'Unauthorized' });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const userId = session.user.id;
+  const { message, chatId, userProgress, context } = await req.json();
+
+  if (!message || typeof message !== 'string') {
+    return NextResponse.json({ error: 'Message must be a string' }, { status: 400 });
+  }
+
+  if (!chatId) {
+    return NextResponse.json({ error: 'Missing chatId in request body' }, { status: 400 });
+  }
 
   try {
-    const { message, chatId, userProgress, context } = req.body;
-
-    if (!message || typeof message !== 'string') {
-      return res.status(400).json({ error: 'Message must be a string' });
-    }
-
-    if (!chatId) {
-      return res.status(400).json({ error: 'Missing chatId in request body' });
-    }
-
     // Initialize Pinecone client
     const pinecone = await initializePinecone();
     const index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
@@ -68,7 +62,7 @@ export default async function handler(req, res) {
       upsertRequest: {
         vectors: [
           {
-            id: messageData.id,
+            id: messageData.id.toString(),
             values: embedding,
             metadata: { text: message, userId },
           },
@@ -120,12 +114,12 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       sender: 'assistant',
     });
 
-    res.status(200).json({ message: aiResponse });
+    return NextResponse.json({ message: aiResponse }, { status: 200 });
   } catch (error) {
     console.error('Error in API route:', error);
-    res.status(500).json({
-      error: 'Internal Server Error',
-      details: error.message,
-    });
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: error.message },
+      { status: 500 }
+    );
   }
 }

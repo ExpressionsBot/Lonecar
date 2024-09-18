@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import supabase from '@/utils/supabaseClient';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 const useChatStore = create((set, get) => ({
   currentChat: null,
@@ -10,6 +12,10 @@ const useChatStore = create((set, get) => ({
   context: [],
 
   setCurrentChat: (chatId) => set({ currentChat: chatId }),
+
+  // Add the addMessage function here
+  addMessage: (message) =>
+    set((state) => ({ messages: [...state.messages, message] })),
 
   fetchMessages: async (chatId) => {
     try {
@@ -38,55 +44,38 @@ const useChatStore = create((set, get) => ({
     }
   },
 
-  sendMessage: async (message) => {
-    const { currentChat, userProgress, context } = get();
+  sendMessage: async (message, chatId, context, userProgress) => {
     try {
-      // Insert user message into Supabase
-      const { data: newMessage, error: insertError } = await supabase
-        .from('conversations')
-        .insert({
-          content: message.content,
-          session_id: currentChat,
-          sender: 'user',
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // Send message to API for processing
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: message.content,
-          chatId: currentChat,
-          context: context,
-          userProgress: userProgress,
-        }),
+        credentials: 'include', // Include this line
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message, chatId, context, userProgress }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Error processing message');
+        throw new Error(errorData.error || 'Failed to send message');
       }
 
-      const result = await response.json();
-
-      // Insert AI response into Supabase
-      await supabase.from('conversations').insert({
-        content: result.message,
-        session_id: currentChat,
-        sender: 'assistant',
-      });
-
-      // Fetch updated messages
-      await get().fetchMessages(currentChat);
+      const data = await response.json();
+      // Handle successful response...
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in sendMessage:', error);
+      // Handle error...
     }
+  },
+
+  // Helper function to extract error message from HTML
+  extractErrorFromHtml: (htmlContent) => {
+    // This is a simple implementation. You might need to adjust it based on the actual HTML structure.
+    const match = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if (match) {
+      return match[1].replace(/<[^>]*>/g, '').trim();
+    }
+    return null;
   },
 
   createChat: async (sessionName) => {
@@ -128,6 +117,29 @@ const useChatStore = create((set, get) => ({
       throw error;
     }
   },
+
+  subscribeToMessages: (chatId) => {
+    const subscription = supabase
+      .channel(`public:conversations:session_id=eq.${chatId}`)
+      .on('INSERT', (payload) => {
+        const newMessage = payload.new;
+        set((state) => ({
+          messages: [...state.messages, newMessage],
+        }));
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  },
+
+  clearPendingResponse: (chatId) => {
+    // Implement any logic needed to clear pending responses
+    console.log(`Clearing pending response for chat ${chatId}`);
+  },
+
+  setMessageInput: (input) => set({ messageInput: input }),
 }));
 
 export default useChatStore;

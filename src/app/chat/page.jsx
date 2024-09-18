@@ -11,6 +11,7 @@ import useChatStore from '@/store/chatStore';
 import useAuth from '@/hooks/useAuth';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import supabase from '@/utils/supabaseClient'; // Add this line
 
 export default function ChatPage() {
   const router = useRouter();
@@ -49,6 +50,12 @@ export default function ChatPage() {
         router.push('/login');
       } else {
         setIsLoading(false);
+        // Check if the user is authenticated with Supabase
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (!session) {
+            router.push('/login');
+          }
+        });
       }
     }
   }, [session, loading, router]);
