@@ -2,6 +2,12 @@ import { initializePinecone } from '@/utils/pineconeClient';
 import { createEmbedding } from '@/utils/openaiHelpers';
 import { formatResponse } from '@/utils/apiHelpers';
 import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Initialize OpenAI client outside the handler
 const openai = new OpenAI({
@@ -83,7 +89,27 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       ],
     });
     console.log('OpenAI response generated');
-    
+
+    // Save AI response to Supabase
+    const { data, error } = await supabase
+      .from('conversations')
+      .insert({
+        user_id: userId,
+        content: aiResponse.choices[0].message.content,
+        session_id: chatId,
+        sender: 'assistant',
+      });
+
+    if (error) {
+      console.error('Error saving AI response to Supabase:', error);
+      return new Response(JSON.stringify({ error: 'Failed to save AI response', details: error.message }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('AI response saved to Supabase');
+
     return new Response(JSON.stringify(formatResponse(aiResponse)), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
