@@ -1,0 +1,47 @@
+- `if __name__ == "__main__":`
+  - `asyncio.run(main())`
+
+- Inside `main()`:
+  - `console.print(...)`
+  - `user_input = await get_user_input()`
+  - `reset_conversation()`
+  - `filename = save_chat()`
+  - `image_path = await get_user_input()`
+  - `os.path.isfile(image_path)`
+  - `user_input = await get_user_input()`
+  - `response, _ = await chat_with_claude(user_input, image_path)`
+  - `response, _ = await chat_with_claude(user_input, current_iteration=iteration_count+1, max_iterations=max_iterations)`
+  - `console.print(...)`
+  - `conversation_history.append(...)`
+  - `response, _ = await chat_with_claude(user_input)`
+
+- Inside `chat_with_claude()`:
+  - `encode_image_to_base64(image_path)`
+  - `client.messages.create(...)`
+  - `execute_tool(tool_name, tool_input)`
+  - `console.print(...)`
+  - `display_token_usage()`
+
+- Inside `execute_tool()`:
+  - Tool-specific functions based on `tool_name`:
+    - `create_folder(tool_input["path"])`
+    - `create_file(tool_input["path"], tool_input.get("content", ""))`
+    - `await edit_and_apply(...)`
+    - `read_file(tool_input["path"])`
+    - `read_multiple_files(tool_input["paths"])`
+    - `list_files(tool_input.get("path", "."))`
+    - `tavily_search(tool_input["query"])`
+    - `stop_process(tool_input["process_id"])`
+    - `process_id, execution_result = await execute_code(tool_input["code"])`
+    - `analysis = await send_to_ai_for_executing(tool_input["code"], execution_result)`
+
+- Other function calls:
+  - `setup_virtual_environment()`
+  - `highlight_diff(diff_text)`
+  - `parse_search_replace_blocks(response_text)`
+  - `await generate_edit_instructions(...)`
+  - `await apply_edits(...)`
+  - `generate_diff(original, new, path)`
+  - `reset_code_editor_memory()`
+  - `reset_conversation()`
+  - `display_token_usage()`

@@ -27,10 +27,14 @@ export async function POST(request) {
     // Handle error or wait
   }
 
+  const requestId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+
   try {
     const { message, userId, chatId, context, userProgress } = await request.json();
+    console.log(`[${requestId}] Received request:`, { message: message.substring(0, 50) + '...', chatId, userId });
 
     if (!message || !userId || !chatId) {
+      console.log(`[${requestId}] Missing required fields`);
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +57,7 @@ export async function POST(request) {
       includeMetadata: true,
     });
 
-    console.log('Pinecone query response:', queryResponse);
+    console.log(`[${requestId}] Pinecone query response:`, { matches: queryResponse.matches.length });
 
     const relevantContext = queryResponse.matches
       .map((match) => match.metadata.text)
@@ -78,6 +82,8 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       ],
     });
 
+    console.log(`[${requestId}] OpenAI response generated:`, { content: aiResponse.choices[0].message.content.substring(0, 50) + '...' });
+
     // Save AI response to Supabase
     const { data, error } = await supabase
       .from('conversations')
@@ -89,8 +95,10 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
         // Do not include 'id' here; let Supabase generate it
       });
 
+    console.log(`[${requestId}] Supabase insertion result:`, { success: !error, error: error ? error.message : null });
+
     if (error) {
-      console.error('Error saving AI response to Supabase:', error);
+      console.error(`[${requestId}] Error saving AI response to Supabase:`, error);
       return new Response(JSON.stringify({ error: 'Failed to save AI response', details: error.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
@@ -102,7 +110,7 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (error) {
-    console.error('Detailed error in API route:', error);
+    console.error(`[${requestId}] Error in API route:`, error);
     return new Response(JSON.stringify({ error: 'Internal Server Error', details: error.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

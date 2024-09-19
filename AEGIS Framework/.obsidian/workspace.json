@@ -1,0 +1,190 @@
+{
+  "main": {
+    "id": "8eb700d94b9b38bd",
+    "type": "split",
+    "children": [
+      {
+        "id": "03c33c7d9726d2cb",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "015f54619bcea7fb",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "ToolKit/Prompt Techniques/Active-Prompt.md",
+                "mode": "source",
+                "source": false
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "2036d69590d40fe8",
+    "type": "split",
+    "children": [
+      {
+        "id": "26eaef431c862f0b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "bafc21e740dd15f3",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "6efcd63bb52e51c4",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              }
+            }
+          },
+          {
+            "id": "607628581f63d02e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {}
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "231bd694d9053479",
+    "type": "split",
+    "children": [
+      {
+        "id": "c6077c6af02e4b8f",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "9f4891a7b4467c9a",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "ToolKit/Prompt Techniques/Active-Prompt.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "f6bccf15533de944",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "ToolKit/Prompt Techniques/Active-Prompt.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              }
+            }
+          },
+          {
+            "id": "93f37330aa637869",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true
+              }
+            }
+          },
+          {
+            "id": "156e0d376e00b1e4",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "ToolKit/Prompt Techniques/Active-Prompt.md"
+              }
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false
+    }
+  },
+  "active": "015f54619bcea7fb",
+  "lastOpenFiles": [
+    "ToolKit/Prompt Techniques/Automatic Prompt Engineer (APE).md",
+    "ToolKit/Prompt Techniques/Automatic Reasoning and Tool-Use (ART).md",
+    "ToolKit/Prompt Techniques/Self-Consistency.md",
+    "ToolKit/Prompt Techniques/Chain-of-Thought Prompting.md",
+    "ToolKit/Prompt Techniques/Zero-Shot Prompting.md",
+    "ToolKit/Prompt Techniques/Tree of Thoughts (ToT).md",
+    "ToolKit/Prompt Techniques/ReAct Synergizing Reasoning and Acting in Language Models.md",
+    "ToolKit/Prompt Techniques/Reflexion.md",
+    "ToolKit/Prompt Techniques/Retrieval-Augmented Generation (RAG).md",
+    "ToolKit/Prompt Techniques/Prompt Chaining.md",
+    "ToolKit/Prompt Techniques/Program-Aided Language Models (PAL).md",
+    "ToolKit/Prompt Techniques/Multimodal Chain-of-Thought (CoT) Prompting.md",
+    "ToolKit/Prompt Techniques/Meta Prompting.md",
+    "ToolKit/Prompt Techniques/Graph Prompting.md",
+    "ToolKit/Prompt Techniques/Generated Knowledge Prompting.md",
+    "ToolKit/Prompt Techniques/Few-Shot Prompting.md",
+    "ToolKit/Prompt Techniques/Directional Stimulus Prompting (DSP) Framework.md",
+    "Architectural Design.md",
+    "Continuous Improvement.md",
+    "Innovation and Adaptability.md",
+    "Narrative Identity priming.md",
+    "Objectives and Metrics.md",
+    "Performance Optimization.md",
+    "Project Structure and Team Assembly.md",
+    "Roles and Collaboration.md",
+    "User Experience Design.md",
+    "Untitled.canvas",
+    "Untitled 1.canvas",
+    "ToolKit/Bots/Lucidia/Lucidia.py",
+    "ToolKit/Bots/Lucidia/New Text Document.txt",
+    "ToolKit/Bots/Lucidia",
+    "ToolKit/Bots/New folder",
+    "ToolKit/Bots/Solara",
+    "ToolKit/Bots/ResearchBots/ChaosThoery bot.txt",
+    "ToolKit/Bots/ResearchBots",
+    "ToolKit/KnowlegeGraphing/knowledge_graph_structureEXAMPLE.txt",
+    "ToolKit/KnowlegeGraphing",
+    "ToolKit/New folder"
+  ]
+}
