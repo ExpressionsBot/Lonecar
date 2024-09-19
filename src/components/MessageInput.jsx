@@ -8,19 +8,27 @@ import { motion, AnimatePresence } from 'framer-motion'; // Import motion and An
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSmile, faEllipsisV } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
+import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'react-toastify';
 
 // Define the MessageInput component
 export default function MessageInput({
-  onSendMessage,
   isAiResponding,
 }) {
-  const { messageInput, setMessageInput, currentChat, sendMessage, context, userProgress } = useChatStore(state => ({
+  const {
+    messageInput,
+    setMessageInput,
+    currentChat,
+    sendMessage,
+    context,
+    userProgress,
+  } = useChatStore((state) => ({
     messageInput: state.messageInput,
     setMessageInput: state.setMessageInput,
     currentChat: state.currentChat,
     sendMessage: state.sendMessage,
     context: state.context,
-    userProgress: state.userProgress
+    userProgress: state.userProgress,
   }));
 
   // Destructure variables from the store
@@ -30,16 +38,42 @@ export default function MessageInput({
   const emojiPickerRef = useRef(null);
   const menuRef = useRef(null);
 
-  // Function to handle form submission
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!currentChat) {
-      console.error('No current chat selected');
-      return;
-    }
-    sendMessage(messageInput, currentChat, context, userProgress);
-    setMessageInput('');
-  };
+  // Debounced function to send the message with a delay to prevent rapid-fire messages
+  const debouncedSendMessage = useCallback(
+    debounce((msg) => {
+      sendMessage({
+        content: msg,
+        sender: 'user',
+        created_at: new Date().toISOString()
+      });
+    }, 300),
+    [sendMessage]
+  );
+
+  const handleSubmit = useCallback(
+    async (e) => {
+      e.preventDefault();
+      if (!currentChat) {
+        console.error('No current chat selected');
+        toast.error('Please select a chat session before sending messages.');
+        return;
+      }
+      if (!messageInput.trim()) {
+        console.error('Message input is empty');
+        toast.error('Message cannot be empty.');
+        return;
+      }
+
+      try {
+        debouncedSendMessage(messageInput.trim());
+        setMessageInput('');
+      } catch (error) {
+        console.error('Error sending message:', error);
+        toast.error('Error sending message: ' + error.message);
+      }
+    },
+    [currentChat, messageInput, debouncedSendMessage, setMessageInput]
+  );
 
   // Function to handle key down events on the textarea
   const handleKeyDown = (e) => {

@@ -63,48 +63,41 @@ const useChatStore = create((set, get) => ({
     }
   },
 
-  sendMessage: async (messageText, chatId, context, userProgress) => {
+  sendMessage: async (userMessage) => {
     const userId = get().currentUserId;
+    const currentChat = get().currentChat;
 
-    if (!userId) {
-      console.error('User ID is not set');
-      return;
+    if (!userId || !currentChat || !userMessage.content) {
+      console.error('Missing required fields:', { userId, currentChat, content: userMessage.content });
+      throw new Error('Missing required fields for sending message');
     }
 
-    const userMessage = {
-      id: uuidv4(),
-      content: messageText,
-      sender: 'user',
-      created_at: new Date().toISOString(),
-    };
-
     try {
+      // **No need to add the user message to the state here since it's handled by the subscription**
+
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: messageText,
-          chatId,
-          userId,
-          context,
-          userProgress,
+          message: userMessage.content,
+          userId: userId,
+          chatId: currentChat,
+          context: get().context,
+          userProgress: get().userProgress,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Error from API:', errorData);
-        return;
+        console.error('API Error:', errorData);
+        throw new Error(errorData.error || `Failed to send message: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
-      if (result.success) {
-        set((state) => ({
-          messages: [...state.messages, userMessage],
-        }));
-      }
+      // No need to parse the result since we're handling everything via subscriptions
+      return;
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
     }
   },
 
@@ -164,7 +157,9 @@ const useChatStore = create((set, get) => ({
       .on('INSERT', (payload) => {
         const newMessage = payload.new;
         set((state) => ({
-          messages: [...state.messages, newMessage],
+          messages: state.messages.some(msg => msg.id === newMessage.id) 
+            ? state.messages 
+            : [...state.messages, newMessage],
         }));
       })
       .subscribe();

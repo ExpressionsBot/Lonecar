@@ -26,8 +26,8 @@ export default function ChatPage() {
     setUserProgress, 
     context, 
     setContext,
-    initializeUser, // Add this
-    addMessage // Add this
+    addMessage,
+    initializeUser // Keep this one
   } = useChatStore();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -66,24 +66,33 @@ export default function ChatPage() {
   }, [messages]);
 
   const handleSendMessage = useCallback(async (content) => {
-    if (!currentChat) return;
+    if (!currentChat || !session) return;
     const userMessage = {
       content,
       sender: 'user',
       session_id: currentChat,
+      user_id: session.user.id,
       created_at: new Date().toISOString()
     };
     try {
       setIsAiResponding(true);
+      // Insert the user message into Supabase
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert(userMessage)
+        .select();
+      if (error) throw error;
+      // Add the message to the local state
+      addMessage(data[0]);
+      // Send the message to the AI
       await sendMessage(userMessage);
-      // No need to fetch messages here, as it's handled by the subscription
     } catch (error) {
       console.error('Error in message flow:', error);
       toast.error('Error sending message: ' + error.message);
     } finally {
       setIsAiResponding(false);
     }
-  }, [currentChat, sendMessage]);
+  }, [currentChat, session, sendMessage, addMessage]);
 
   useEffect(() => {
     initializeUser();

@@ -33,7 +33,11 @@ export async function POST(request) {
 
   try {
     const { message, userId, chatId, context, userProgress } = await request.json();
-    console.log(`[${requestId}] Received request:`, { message: message.substring(0, 50) + '...', chatId, userId });
+    console.log(`[${requestId}] Received request:`, {
+      message: message ? message.substring(0, 50) + '...' : 'No message content',
+      chatId,
+      userId,
+    });
 
     if (!message || !userId || !chatId) {
       console.log(`[${requestId}] Missing required fields`);
@@ -43,7 +47,26 @@ export async function POST(request) {
       });
     }
 
-    // Generate embedding for querying
+    // **Insert the user's message into the 'conversations' table**
+    const { data: userMessageData, error: userMessageError } = await supabase
+      .from('conversations')
+      .insert({
+        user_id: userId,
+        content: message,
+        session_id: chatId,
+        sender: 'user',
+      })
+      .select();
+
+    if (userMessageError) {
+      console.error(`[${requestId}] Error inserting user message:`, userMessageError);
+      throw userMessageError;
+    }
+
+    console.log(`[${requestId}] User message inserted successfully.`);
+
+    // **Proceed to generate AI response**
+    // Prepare system prompt and generate OpenAI response
     const queryEmbedding = await createEmbedding(message);
 
     // Verify embedding
@@ -84,47 +107,30 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       ],
     });
 
-    console.log(`[${requestId}] OpenAI response generated:`, { content: aiResponse.choices[0].message.content.substring(0, 50) + '...' });
-
-    console.log(`[${requestId}] Attempting Supabase insertion with data:`, {
-      user_id: userId,
-      content: aiResponse.choices[0].message.content,
-      session_id: chatId,
-      sender: 'assistant'
+    console.log(`[${requestId}] OpenAI response generated:`, {
+      content: aiResponse.choices[0].message.content.substring(0, 50) + '...',
     });
 
-    try {
-      const { data, error } = await supabase
-        .from('conversations')
-        .insert({
-          user_id: userId,
-          content: aiResponse.choices[0].message.content,
-          session_id: chatId,
-          sender: 'assistant',
-        })
-        .select();
+    // **Insert the AI's response into the 'conversations' table**
+    const { data: aiResponseData, error: aiResponseError } = await supabase
+      .from('conversations')
+      .insert({
+        user_id: userId,
+        content: aiResponse.choices[0].message.content,
+        session_id: chatId,
+        sender: 'assistant',
+      })
+      .select();
 
-      if (error) {
-        console.error(`[${requestId}] Supabase insertion error:`, error);
-        throw error;
-      }
-
-      console.log(`[${requestId}] Supabase insertion successful. Inserted data:`, data);
-
-      return new Response(JSON.stringify({ success: true, messageId: data[0].id }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    } catch (error) {
-      console.error(`[${requestId}] Error during Supabase insertion:`, error);
-      return new Response(JSON.stringify({ error: 'Failed to save AI response', details: error.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' },
-      });
+    if (aiResponseError) {
+      console.error(`[${requestId}] Error inserting AI response:`, aiResponseError);
+      throw aiResponseError;
     }
 
-    console.log(`[${requestId}] API request completed successfully`);
-    return new Response(JSON.stringify(formatResponse(aiResponse)), {
+    console.log(`[${requestId}] AI response inserted successfully.`);
+
+    // **Return a success response**
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     });
