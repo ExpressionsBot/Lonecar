@@ -26,7 +26,8 @@ export default function ChatPage() {
     setUserProgress, 
     context, 
     setContext,
-    addMessage // Destructure addMessage from the store
+    initializeUser, // Add this
+    addMessage // Add this
   } = useChatStore();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -83,8 +84,6 @@ export default function ChatPage() {
       setIsAiResponding(false);
     }
   }, [currentChat, sendMessage]);
-
-  const { initializeUser } = useChatStore();
 
   useEffect(() => {
     initializeUser();

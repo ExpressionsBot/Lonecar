@@ -9,6 +9,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+console.log('Supabase client initialized with URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+
 // Initialize OpenAI client outside the handler
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -84,27 +86,44 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
 
     console.log(`[${requestId}] OpenAI response generated:`, { content: aiResponse.choices[0].message.content.substring(0, 50) + '...' });
 
-    // Save AI response to Supabase
-    const { data, error } = await supabase
-      .from('conversations')
-      .insert({
-        user_id: userId,
-        content: aiResponse.choices[0].message.content,
-        session_id: chatId,
-        sender: 'assistant',
-        // Do not include 'id' here; let Supabase generate it
+    console.log(`[${requestId}] Attempting Supabase insertion with data:`, {
+      user_id: userId,
+      content: aiResponse.choices[0].message.content,
+      session_id: chatId,
+      sender: 'assistant'
+    });
+
+    try {
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({
+          user_id: userId,
+          content: aiResponse.choices[0].message.content,
+          session_id: chatId,
+          sender: 'assistant',
+        })
+        .select();
+
+      if (error) {
+        console.error(`[${requestId}] Supabase insertion error:`, error);
+        throw error;
+      }
+
+      console.log(`[${requestId}] Supabase insertion successful. Inserted data:`, data);
+
+      return new Response(JSON.stringify({ success: true, messageId: data[0].id }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
       });
-
-    console.log(`[${requestId}] Supabase insertion result:`, { success: !error, error: error ? error.message : null });
-
-    if (error) {
-      console.error(`[${requestId}] Error saving AI response to Supabase:`, error);
+    } catch (error) {
+      console.error(`[${requestId}] Error during Supabase insertion:`, error);
       return new Response(JSON.stringify({ error: 'Failed to save AI response', details: error.message }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
+    console.log(`[${requestId}] API request completed successfully`);
     return new Response(JSON.stringify(formatResponse(aiResponse)), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

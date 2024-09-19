@@ -78,49 +78,33 @@ const useChatStore = create((set, get) => ({
       created_at: new Date().toISOString(),
     };
 
-    // Update local state to include the new message
-    set((state) => ({
-      messages: [...state.messages, userMessage],
-    }));
-
     try {
-      // Send the message to the backend API
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageText,
           chatId,
-          userId, // Use the userId from the state
+          userId,
           context,
           userProgress,
         }),
       });
 
-      // Handle errors in response
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Error from API:', errorData);
-        // Optionally, handle the error (e.g., show a notification)
         return;
       }
 
-      // Handle the AI response
-      const aiResponse = await response.json();
-      if (aiResponse) {
-        const assistantMessage = {
-          id: uuidv4(),
-          content: aiResponse.content,
-          sender: 'assistant',
-          created_at: new Date().toISOString(),
-        };
+      const result = await response.json();
+      if (result.success) {
         set((state) => ({
-          messages: [...state.messages, assistantMessage],
+          messages: [...state.messages, userMessage],
         }));
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Handle error (e.g., display a notification to the user)
     }
   },
 

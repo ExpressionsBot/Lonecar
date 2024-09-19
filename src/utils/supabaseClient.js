@@ -1,21 +1,15 @@
 import { createClient } from '@supabase/supabase-js'; // Import the createClient function from the supabase-js library
 
-// Get the Supabase URL and Anon Key from environment variables
+// Client-side Supabase URL and anon key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Check if the Supabase URL and Anon Key are available
+// Check if the Supabase URL and anon key are available
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-// Create a Supabase client using the URL and Anon Key
-const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true, // Include this if you're using OAuth or magic links
-  },
-});
+// Create a Supabase client using the URL and anon key
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default supabase; // Export the Supabase client as the default export

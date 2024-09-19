@@ -7,21 +7,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
-import { v4 as uuidv4 } from 'uuid';
 
 export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   const { deleteMessage, fetchMessages, currentChat, subscribeToMessages, clearPendingResponse } = useChatStore(state => ({
     deleteMessage: state.deleteMessage,
     fetchMessages: state.fetchMessages,
     currentChat: state.currentChat,
-    subscribeToMessages: state.subscribeToMessages || (() => {}),
-    clearPendingResponse: state.clearPendingResponse || (() => {}),
+    subscribeToMessages: state.subscribeToMessages,
+    clearPendingResponse: state.clearPendingResponse
   }));
 
   useEffect(() => {
     if (currentChat) {
       fetchMessages(currentChat);
-      const unsubscribe = subscribeToMessages ? subscribeToMessages(currentChat) : null;
+      const unsubscribe = subscribeToMessages(currentChat);
       return () => {
         if (unsubscribe) unsubscribe();
         if (clearPendingResponse) clearPendingResponse(currentChat);
@@ -74,7 +73,7 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <MessageGroup messages={group} deleteMessage={deleteMessage} />
+            <MessageGroup messages={group} />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -99,7 +98,7 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   );
 }
 
-function MessageGroup({ messages, deleteMessage }) {
+function MessageGroup({ messages }) {
   const sender = messages[0].sender;
   return (
     <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -109,7 +108,6 @@ function MessageGroup({ messages, deleteMessage }) {
             key={index}
             message={message}
             isGrouped={index !== 0}
-            deleteMessage={deleteMessage}
           />
         ))}
       </div>
@@ -117,9 +115,10 @@ function MessageGroup({ messages, deleteMessage }) {
   );
 }
 
-function MessageBubble({ message, isGrouped, deleteMessage }) {
+function MessageBubble({ message, isGrouped }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const deleteMessage = useChatStore(state => state.deleteMessage);
   const copyMessage = useChatStore(state => state.copyMessage);
 
   const processedContent = useMemo(() => {

@@ -1,11 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Log the first 6 characters of the service role key for debugging
-console.log('Service Role Key (first 6 chars):', supabaseServiceRoleKey ? supabaseServiceRoleKey.substring(0, 6) + '...' : 'undefined');
+// Check if the Supabase URL and service role key are available
+if (!supabaseUrl || !serviceRoleKey) {
+  throw new Error('Missing Supabase server environment variables');
+}
 
-const supabaseServer = createClient(supabaseUrl, supabaseServiceRoleKey);
+// Create a Supabase client using the URL and service role key
+const supabaseServer = createClient(supabaseUrl, serviceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+  },
+});
 
 export default supabaseServer;

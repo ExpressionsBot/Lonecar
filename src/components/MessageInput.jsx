@@ -14,25 +14,21 @@ export default function MessageInput({
   onSendMessage,
   isAiResponding,
 }) {
-  const messageInput = useChatStore((state) => state.messageInput);
-  const setMessageInput = useChatStore((state) => state.setMessageInput);
-  
-  // Destructure variables from the store
-  const { currentChat, sendMessage, context, userProgress } = useChatStore();
+  const { messageInput, setMessageInput, currentChat, sendMessage, context, userProgress } = useChatStore(state => ({
+    messageInput: state.messageInput,
+    setMessageInput: state.setMessageInput,
+    currentChat: state.currentChat,
+    sendMessage: state.sendMessage,
+    context: state.context,
+    userProgress: state.userProgress
+  }));
 
+  // Destructure variables from the store
   const [showPicker, setShowPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const textareaRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const menuRef = useRef(null);
-
-  // Debounced function to send the message with a delay to prevent rapid-fire messages
-  const debouncedSendMessage = useCallback(
-    debounce((msg) => {
-      onSendMessage(msg);
-    }, 300),
-    [onSendMessage]
-  );
 
   // Function to handle form submission
   const handleSubmit = (e) => {
