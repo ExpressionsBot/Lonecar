@@ -47,7 +47,7 @@ export async function POST(request) {
       });
     }
 
-    // **Insert the user's message into the 'conversations' table**
+    // Insert the user's message into the 'conversations' table
     const { data: userMessageData, error: userMessageError } = await supabase
       .from('conversations')
       .insert({
@@ -65,7 +65,25 @@ export async function POST(request) {
 
     console.log(`[${requestId}] User message inserted successfully.`);
 
-    // **Proceed to generate AI response**
+    // Retrieve recent messages for context
+    const { data: recentMessages, error: messagesError } = await supabase
+      .from('conversations')
+      .select('sender, content')
+      .eq('session_id', chatId)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (messagesError) {
+      console.error(`[${requestId}] Error fetching recent messages:`, messagesError);
+      throw messagesError;
+    }
+
+    // Format messages for OpenAI API
+    const messagesForAI = recentMessages.reverse().map((msg) => ({
+      role: msg.sender === 'assistant' ? 'assistant' : 'user',
+      content: msg.content,
+    }));
+
     // Prepare system prompt and generate OpenAI response
     const queryEmbedding = await createEmbedding(message);
 
@@ -293,6 +311,7 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       model: 'gpt-4o-mini',
       messages: [
         { role: 'system', content: systemPrompt },
+        ...messagesForAI,
         { role: 'user', content: message },
       ],
     });
@@ -301,7 +320,7 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
       content: aiResponse.choices[0].message.content.substring(0, 50) + '...',
     });
 
-    // **Insert the AI's response into the 'conversations' table**
+    // Insert the AI's response into the 'conversations' table
     const { data: aiResponseData, error: aiResponseError } = await supabase
       .from('conversations')
       .insert({
@@ -319,7 +338,7 @@ Use the following context to inform your response: ${context.join(' ')} ${releva
 
     console.log(`[${requestId}] AI response inserted successfully.`);
 
-    // **Return a success response**
+    // Return a success response
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
