@@ -19,7 +19,7 @@ export default function ChatHeader({ currentChat }) {
         <div
           className="absolute bottom left-0.5 w-52 h-16 bg-vibrant-red filter blur-sm z-90 animate-pulse"
           style={{ 
-            opacity: -99.8,
+            opacity: -9.8,
             animationDuration: '40s'
           }}
           aria-hidden="true"
