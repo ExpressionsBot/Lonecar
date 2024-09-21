@@ -153,7 +153,7 @@ export default function MessageInput({
           onClick={() => setShowMenu(!showMenu)}
           aria-label="Open menu"
           aria-expanded={showMenu}
-          className="flex items-center justify-center w-10 h-10 text-light-gray hover:text-white transition-colors rounded-none bg-vibrant-red bg-opacity-60 hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-vibrant-red focus:ring-offset-2 focus:ring-offset-navy"
+          className="flex items-center justify-center w-10 h-10 text-light-gray hover:text-white transition-colors rounded-none bg-vibrant-red hover:bg-opacity-80 focus:outline-none focus:ring-2 focus:ring-vibrant-red focus:ring-offset-2 focus:ring-offset-navy"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
