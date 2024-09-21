@@ -9,12 +9,13 @@ import { faEllipsisV, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons'
 import useChatStore from '@/store/chatStore';
 
 export default function ChatMessages({ messages, isLoading, isAiResponding }) {
-  const { deleteMessage, fetchMessages, currentChat, subscribeToMessages, clearPendingResponse } = useChatStore(state => ({
+  const { deleteMessage, fetchMessages, currentChat, subscribeToMessages, clearPendingResponse, userEmail } = useChatStore(state => ({
     deleteMessage: state.deleteMessage,
     fetchMessages: state.fetchMessages,
     currentChat: state.currentChat,
     subscribeToMessages: state.subscribeToMessages,
-    clearPendingResponse: state.clearPendingResponse
+    clearPendingResponse: state.clearPendingResponse,
+    userEmail: state.userEmail
   }));
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <MessageGroup messages={group} />
+            <MessageGroup messages={group} userEmail={userEmail} />
           </motion.div>
         ))}
       </AnimatePresence>
@@ -98,7 +99,7 @@ export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   );
 }
 
-function MessageGroup({ messages }) {
+function MessageGroup({ messages, userEmail }) {
   const sender = messages[0].sender;
   return (
     <div className={`flex ${sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
@@ -108,6 +109,7 @@ function MessageGroup({ messages }) {
             key={index}
             message={message}
             isGrouped={index !== 0}
+            userEmail={userEmail}
           />
         ))}
       </div>
@@ -115,7 +117,7 @@ function MessageGroup({ messages }) {
   );
 }
 
-function MessageBubble({ message, isGrouped }) {
+function MessageBubble({ message, isGrouped, userEmail }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
   const deleteMessage = useChatStore(state => state.deleteMessage);
@@ -187,7 +189,7 @@ function MessageBubble({ message, isGrouped }) {
       </ReactMarkdown>
       <div className="flex justify-between items-center mt-3">
         <p className="text-xs opacity-70 mr-2">
-          {message.sender === 'user' ? 'You' : 'LonestarAI'}
+          {message.sender === 'user' ? userEmail : 'LonestarAI'}
         </p>
         <p className="text-xs opacity-70 ml-2">
           {new Date(message.created_at).toLocaleTimeString()}

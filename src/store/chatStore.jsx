@@ -26,7 +26,7 @@ const useChatStore = create((set, get) => ({
     }
 
     if (user) {
-      set({ currentUserId: user.id });
+      set({ currentUserId: user.id, userEmail: user.email });
     }
   },
 
