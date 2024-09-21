@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
+import Image from 'next/image';
 
 export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   const { deleteMessage, fetchMessages, currentChat, subscribeToMessages, clearPendingResponse, userEmail } = useChatStore(state => ({
@@ -188,9 +189,18 @@ function MessageBubble({ message, isGrouped, userEmail }) {
         {processedContent}
       </ReactMarkdown>
       <div className="flex justify-between items-center mt-3">
-        <p className="text-xs opacity-70 mr-2">
-          {message.sender === 'user' ? userEmail : 'LonestarAI'}
-        </p>
+        {message.sender === 'user' ? (
+          <p className="text-xs opacity-70 mr-90">{userEmail}</p>
+        ) : (
+          <div className="w-20 h-10 relative mr-90">
+            <Image
+              src="/6446aa0f3ea6fc51c7c3cd24_Lonestar Solar Services Logo-p-1600.png"
+              alt="Lonestar Solar Services Logo"
+              layout="fill"
+              objectFit="contain"
+            />
+          </div>
+        )}
         <p className="text-xs opacity-70 ml-2">
           {new Date(message.created_at).toLocaleTimeString()}
         </p>
