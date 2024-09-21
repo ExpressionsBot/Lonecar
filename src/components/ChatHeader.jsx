@@ -17,10 +17,10 @@ export default function ChatHeader({ currentChat }) {
         />
         {/* Glowing effect */}
         <div
-          className="absolute bottom left-0.5 w-52 h-16 bg-vibrant-red filter blur-sm z-90 animate-pulse"
+          className="absolute bottom left- w-52 h-16 bg-vibrant-red filter blur-sm z-90 animate-pulse"
           style={{ 
             opacity: -9.8,
-            animationDuration: '40s'
+            animationDuration: '10s'
           }}
           aria-hidden="true"
         ></div>
