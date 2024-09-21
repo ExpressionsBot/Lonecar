@@ -5,7 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEllipsisV, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faEllipsisV, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
 
 export default function ChatMessages({ messages, isLoading, isAiResponding }) {
@@ -118,6 +118,7 @@ function MessageGroup({ messages }) {
 function MessageBubble({ message, isGrouped }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const deleteMessage = useChatStore(state => state.deleteMessage);
   const copyMessage = useChatStore(state => state.copyMessage);
 
   const processedContent = useMemo(() => {
@@ -152,7 +153,7 @@ function MessageBubble({ message, isGrouped }) {
       transition={{ duration: 0.3 }}
       className={`relative max-w-full md:max-w-2xl lg:max-w-3xl xl:max-w-4xl rounded-2xl p-6 
         ${message.sender === 'user' 
-          ? 'bg-vibrant-red text-light-gray self-end' 
+          ? 'bg-vibrant-red text-light-gray self-end border border-white' 
           : 'bg-navy border border-light-gray border-opacity-20 text-light-gray self-start'} 
         shadow-lg 
         ${isGrouped ? 'mt-2' : 'mt-4'}`}
@@ -230,6 +231,13 @@ function MessageBubble({ message, isGrouped }) {
                   role="menuitem"
                 >
                   <FontAwesomeIcon icon={faCopy} className="mr-3" /> Copy
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex items-center px-4 py-2 text-sm text-light-gray hover:bg-vibrant-red hover:bg-opacity-20 w-full text-left"
+                  role="menuitem"
+                >
+                  <FontAwesomeIcon icon={faTrash} className="mr-3" /> Delete
                 </button>
               </div>
             </motion.div>
