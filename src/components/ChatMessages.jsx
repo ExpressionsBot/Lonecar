@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisV, faCopy, faTrash } from '@fortawesome/free-solid-svg-icons';
 import useChatStore from '@/store/chatStore';
 import Image from 'next/image';
+import MathRenderer from './MathRenderer';
 
 export default function ChatMessages({ messages, isLoading, isAiResponding }) {
   const { deleteMessage, fetchMessages, currentChat, subscribeToMessages, clearPendingResponse, userEmail } = useChatStore(state => ({
@@ -118,6 +119,19 @@ function MessageGroup({ messages, userEmail }) {
   );
 }
 
+const renderMessageContent = (content) => {
+  const parts = content.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/);
+  return parts.map((part, index) => {
+    if (part.startsWith('$$') && part.endsWith('$$')) {
+      return <MathRenderer key={index} math={part.slice(2, -2)} block={true} />;
+    } else if (part.startsWith('$') && part.endsWith('$')) {
+      return <MathRenderer key={index} math={part.slice(1, -1)} />;
+    } else {
+      return <ReactMarkdown key={index}>{part}</ReactMarkdown>;
+    }
+  });
+};
+
 function MessageBubble({ message, isGrouped, userEmail }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -161,33 +175,9 @@ function MessageBubble({ message, isGrouped, userEmail }) {
         shadow-lg 
         ${isGrouped ? 'mt-2' : 'mt-4'}`}
     >
-      <ReactMarkdown
-        className="text-sm md:text-base leading-relaxed break-words mb-4"
-        components={{
-          code({ node, inline, className, children, ...props }) {
-            const match = /language-(\w+)/.exec(className || '');
-            return !inline && match ? (
-              <SyntaxHighlighter
-                style={atomDark}
-                language={match[1]}
-                PreTag="div"
-                {...props}
-              >
-                {String(children).replace(/\n$/, '')}
-              </SyntaxHighlighter>
-            ) : (
-              <code className={`${className} bg-gray-800 rounded px-1`} {...props}>
-                {children}
-              </code>
-            );
-          },
-          p: ({ children }) => <p className="mb-2">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc ml-4 mb-2">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal ml-4 mb-2">{children}</ol>,
-        }}
-      >
-        {processedContent}
-      </ReactMarkdown>
+      <div className="text-sm md:text-base leading-relaxed break-words mb-4">
+        {renderMessageContent(processedContent)}
+      </div>
       <div className="flex justify-between items-center mt-3">
         {message.sender === 'user' ? (
           <p className="text-xs opacity-70 mr-90">{userEmail}</p>

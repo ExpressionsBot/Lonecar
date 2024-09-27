@@ -1,4 +1,5 @@
 import '../styles/globals.css'; // Import global CSS styles
+import 'katex/dist/katex.min.css'; // Import KaTeX CSS
 
 // Define the custom App component
 function MyApp({ Component, pageProps }) {
