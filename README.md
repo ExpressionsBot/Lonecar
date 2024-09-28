@@ -1,55 +1,49 @@
-# Aegis Framework: AI-Powered Chat Application
+# LonestarAI: AI-Powered Sales Coaching Application
 
 ## Overview
-The Aegis Framework is a comprehensive approach to developing AI-powered chat applications that prioritize innovation, ethics, and user-centric design. This project implements the framework to create a chat application that is intuitive, intelligent, and empathetic.
+LonestarAI is an innovative AI-powered sales coaching application designed specifically for door-to-door salespeople. It provides personalized training, real-time feedback, and adaptive learning experiences to enhance sales skills and performance.
 
-## Key Components
-1. Project Structure and Team Assembly
-2. Architectural Design
-3. Performance Optimization
-4. User Experience Design
-5. Innovation and Adaptability
-6. Roles and Collaboration
-7. Objectives and Metrics
-8. Continuous Improvement
+## Key Features
+1. AI-Driven Conversational Interface
+2. Personalized Sales Coaching
+3. Real-time Feedback and Analysis
+4. Role-playing Scenarios
+5. Performance Tracking and Analytics
+6. Integration with Lonestar Solar Services Data
+
+## Technology Stack
+- Frontend: Next.js, React, Tailwind CSS
+- Backend: Node.js, Express.js
+- Database: Supabase
+- AI: OpenAI GPT-4
+- Vector Search: Pinecone
+- State Management: Zustand
+- Authentication: Supabase Auth
 
 ## Getting Started
-Sure! Here is the plan for the **Getting Started** section of the project:
-
----
-
-## Getting Started
-
-Follow these instructions to set up and run the AI-powered chat application on your local machine.
 
 ### Prerequisites
-
-- **Node.js** (version 18.0.0 or higher)
-- **npm** (comes with Node.js)
-- **Supabase** account and project
-- **OpenAI** API key
-- **Pinecone** account and API key
+- Node.js (version 18.0.0 or higher)
+- npm (comes with Node.js)
+- Supabase account and project
+- OpenAI API key
+- Pinecone account and API key
 
 ### Installation
 
 1. **Clone the Repository**
-
    ```bash
-   git clone <repository_url>
-   cd <repository_folder>
+   git clone https://github.com/your-repo/lonestar-ai.git
+   cd lonestar-ai
    ```
 
 2. **Install Dependencies**
-
    ```bash
    npm install
    ```
 
-3. **Set Up Environment Variables**
-
-   Create a `.env.local` file in the root directory and add the following environment variables:
-
-   ```bash
+   Create a `.env.local` file in the root directory with the following:
+   ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
@@ -59,152 +53,72 @@ Follow these instructions to set up and run the AI-powered chat application on y
    PINECONE_INDEX_NAME=your_pinecone_index_name
    ```
 
-   Replace `your_*` with your actual keys and URLs.
-
-4. **Configure Supabase**
-
-   - Create the following tables in your Supabase project:
-
-     - `users`
-     - `chat_sessions`
-     - `conversations`
-
-   - Set up the appropriate authentication and access policies.
-
-5. **Initialize Pinecone**
-
-   - Set up a Pinecone index with the name specified in `PINECONE_INDEX_NAME`.
-
-6. **Run the Development Server**
-
+3. **Run the Development Server**
    ```bash
    npm run dev
    ```
+   The application will be available at `http://localhost:3000`.
 
-   The application should now be running at [http://localhost:3000](http://localhost:3000).
+## Project Structure
+- `/src`: Source code
+  - `/components`: React components
+  - `/pages`: Next.js pages
+  - `/styles`: CSS and styling files
+  - `/utils`: Utility functions
+  - `/hooks`: Custom React hooks
+  - `/store`: Zustand store configurations
+- `/public`: Static assets
+- `/scripts`: Utility scripts
 
-### Additional Notes
+## Key Components
+1. `ChatMessages.jsx`: Renders the chat interface
+2. `MessageInput.jsx`: Handles user input in the chat
+3. `ModelSelector.jsx`: Allows selection of different AI models
+4. `AuthForm.jsx`: Manages user authentication
+5. `ChatHeader.jsx`: Displays the chat header with logo
 
-- Ensure that all API keys and sensitive information are kept secure and not committed to version control.
-- Refer to the project documentation for details on database schema and environment configurations.
-
----
-
-This plan outlines the steps needed to set up and run the project. Let me know if you need further details on any of these steps.
+## API Routes
+- `/api/chat`: Handles chat interactions with AI
+- `/api/auth`: Manages user authentication
+- `/api/messages`: CRUD operations for chat messages
 
 ## Contributing
-# Contributing
-
-We welcome contributions from developers and AI specialists who are interested in improving this AI-powered chat application. Below are the guidelines and roles for contributors.
-
-## Contributor Roles
-
-To ensure that contributions are structured and aligned with the project goals, we have identified specialized roles for contributors:
-
-### 1. **Frontend Developer**
-
-- **Focus**: Enhance the user interface and user experience.
-- **Skills**: React, Next.js, Tailwind CSS, Zustand, SWR.
-- **Tasks**:
-  - Implement new UI features.
-  - Improve performance and responsiveness.
-  - Fix UI/UX bugs and inconsistencies.
-
-### 2. **Backend Developer**
-
-- **Focus**: Develop and optimize server-side functionalities.
-- **Skills**: Node.js, Express.js, Supabase Integration, API Development.
-- **Tasks**:
-  - Create and update API endpoints.
-  - Optimize database queries and data models.
-  - Implement authentication and authorization checks.
-
-### 3. **AI Specialist**
-
-- **Focus**: Enhance AI functionalities and integrations.
-- **Skills**: OpenAI API, Pinecone API, Embedding Models, Prompt Engineering.
-- **Tasks**:
-  - Improve AI response accuracy and relevance.
-  - Optimize embedding generation and storage.
-  - Develop new AI-driven features and enhancements.
-
-### 4. **DevOps Engineer**
-
-- **Focus**: Ensure smooth deployment and operation of the application.
-- **Skills**: CI/CD pipelines, Docker, Environment Configuration, Monitoring Tools.
-- **Tasks**:
-  - Set up and maintain deployment workflows.
-  - Implement monitoring and logging solutions.
-  - Optimize application performance and scalability.
-
-### 5. **Documentation Specialist**
-
-- **Focus**: Maintain and improve project documentation.
-- **Skills**: Technical writing, Markdown, API Documentation Tools.
-- **Tasks**:
-  - Update README and project documentation.
-  - Create usage guides and tutorials.
-  - Document API endpoints and integration steps.
-
-## Contribution Guidelines
-
-To contribute to this project, please follow these steps:
-
-### 1. Fork the Repository
-
-- Fork the project repository to your GitHub account.
-
-### 2. Create a Branch
-
-- Create a new branch for your feature or bug fix:
-
-  ```bash
-  git checkout -b feature/your-feature-name
-  ```
-
-### 3. Commit Your Changes
-
-- Ensure your code follows the project's coding standards.
-- Include comprehensive comments and documentation.
-- Write clear and descriptive commit messages.
-
-### 4. Push to Your Fork
-
-- Push your changes to your forked repository:
-
-  ```bash
-  git push origin feature/your-feature-name
-  ```
-
-### 5. Open a Pull Request
-
-- Submit a pull request to the `main` branch of the original repository.
-- Provide a clear description of your changes and the problems they solve.
-- Specify the role you are contributing as (e.g., "Contributing as a Backend Developer").
-
-### 6. Code Review
-
-- Your pull request will be reviewed by project maintainers.
-- Be prepared to make changes based on feedback.
-- Engage in discussions and provide any additional information required.
-
-## Coding Standards
-
-- **Style Guide**: Follow the coding style and conventions used in the project.
-- **Testing**: Write unit and integration tests for new features.
-- **Documentation**: Update or add documentation as necessary.
-
-## Communication
-
-- Join our Slack channel or Discord server for real-time communication.
-- Use GitHub issues to report bugs or request features.
-- Engage respectfully and constructively with other contributors.
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
-
-By contributing to this project, you agree that your contributions will be licensed under the same license as the project.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Acknowledgments
+- Lonestar Solar Services for the project inspiration
+- OpenAI for providing the GPT-4 model
+- Supabase and Pinecone for their powerful backend services
 
-We appreciate your interest in contributing to this project. Together, we can build an AI-powered application that is efficient, secure, and user-friendly.
+## Support
+For support, please email support@lonestarsolarservices.com or join our Slack channel.
+```
 
+Now, let's review the updated README:
+
+1. **Project Overview**: The README now clearly states that this is an AI-powered sales coaching application specifically for door-to-door salespeople, which aligns with the Lonestar Solar Services focus.
+
+2. **Key Features**: It outlines the main features of the application, giving potential users and contributors a quick understanding of its capabilities.
+
+3. **Technology Stack**: This section provides a clear overview of the technologies used, which is helpful for developers who might want to contribute or understand the project architecture.
+
+4. **Getting Started**: The installation instructions are comprehensive and include all necessary steps, including setting up environment variables.
+
+5. **Project Structure**: This gives developers a quick overview of how the project is organized, making it easier to navigate the codebase.
+
+6. **Key Components**: Highlighting the main components helps developers understand the core parts of the application.
+
+7. **API Routes**: This section gives an overview of the main API endpoints, which is useful for both frontend and backend developers.
+
+8. **Contributing**: Referencing a CONTRIBUTING.md file encourages community participation and sets expectations for contributors.
+
+9. **License**: Including license information is crucial for open-source projects.
+
+10. **Acknowledgments**: This section gives credit to the key technologies and inspirations behind the project.
+
+11. **Support**: Providing support information helps users know where to turn if they encounter issues.
+
+This updated README provides a more comprehensive overview of the project, its structure, and how to get started with it. It's more aligned with the specific nature of the LonestarAI application and provides better guidance for both users and potential contributors. However, you might want to add more specific details about the sales coaching features and any unique aspects of the Lonestar Solar Services integration as you continue to develop the application.
