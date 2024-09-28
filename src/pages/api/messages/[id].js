@@ -1,5 +1,5 @@
 import supabase from '@/utils/supabaseClient';
-import initializePinecone from '@/utils/pineconeClient';
+import { initializePinecone } from '@/utils/pineconeClient'; // Change this line
 
 let pineconeIndex;
 

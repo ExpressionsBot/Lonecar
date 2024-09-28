@@ -18,15 +18,14 @@ const openai = new OpenAI({
 });
 
 // Initialize Pinecone client
-let index;
+let pineconeIndex;
 (async () => {
-  const pinecone = await initializePinecone();
-  index = pinecone.Index(process.env.PINECONE_INDEX_NAME);
+  pineconeIndex = await initializePinecone();
 })();
 
 export async function POST(request) {
   // Ensure index is ready
-  if (!index) {
+  if (!pineconeIndex) {
     console.error('Pinecone index is not initialized.');
     return new Response(JSON.stringify({ error: 'Service Unavailable' }), {
       status: 503,
@@ -102,7 +101,7 @@ export async function POST(request) {
     }
 
     // Query Pinecone for relevant context
-    const queryResponse = await index.query({
+    const queryResponse = await pineconeIndex.query({
       vector: queryEmbedding,
       topK: 5,
       includeMetadata: true,
